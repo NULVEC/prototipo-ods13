@@ -354,3 +354,39 @@
 
 /* No mostrar el velo en escritorio aunque quede el estado abierto */
 @media (min-width: 901px) { .scrim { display: none; } }
+
+/* ==========================================================================
+   6. PANTALLA DE ARRANQUE
+   Se ve el instante que tarda Firebase en decir si hay sesión abierta. Sin
+   ella, la aplicación parpadearía mostrando el acceso a quien ya entró.
+   ========================================================================== */
+
+#arranque {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--s-6);
+  background: var(--pine-900); color: var(--pine-on-dark);
+}
+#arranque .arranque-marca {
+  display: flex; align-items: center; gap: var(--s-3);
+  font-family: var(--font-display); font-weight: 700; font-size: 15px;
+  line-height: 1.2; color: #eef2ee; letter-spacing: -.01em;
+}
+#arranque .arranque-marca svg { flex: none; color: var(--azul-bright); }
+#arranque .arranque-estado {
+  margin: 0; font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(194, 211, 203, .6);
+}
+/* Barra de progreso indeterminada, en el mismo lenguaje que la cinta */
+#arranque::after {
+  content: ""; width: 180px; height: 2px; border-radius: 1px;
+  background: rgba(194, 211, 203, .16); position: relative; overflow: hidden;
+  background-image: linear-gradient(90deg, transparent 0%, var(--azul-bright) 50%, transparent 100%);
+  background-size: 60% 100%; background-repeat: no-repeat;
+  animation: arranque-barrido 1.1s var(--ease) infinite;
+}
+@keyframes arranque-barrido {
+  from { background-position: -60% 0; }
+  to   { background-position: 160% 0; }
+}

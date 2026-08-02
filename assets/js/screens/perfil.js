@@ -184,8 +184,7 @@ Screens.perfil = {
     document.getElementById('p-alias').addEventListener('click', () => {
       const nuevo = especies[Math.floor(Math.random() * especies.length)] + '-' +
                     String(Math.floor(Math.random() * 900) + 100);
-      u.alias = nuevo;
-      DB.persistir();
+      DB.guardarPerfil({ alias: nuevo });
       UI.toast('Alias actualizado', `En la comunidad aparecerá como ${nuevo}.`, 'info');
       Router.resolver();
     });
@@ -198,10 +197,27 @@ Screens.perfil = {
       }
       await UI.cargando(document.getElementById('p-guardar'), 900);
       const d = Object.fromEntries(new FormData(form));
-      Object.assign(u, { nombre: d.nombre, correo: d.correo, provincia: d.provincia,
+      const correoNuevo = d.correo.trim().toLowerCase() !== u.correo.trim().toLowerCase();
+
+      /* El correo se trata aparte: cambiarlo obliga a verificar la dirección
+         nueva, y solo surte efecto cuando la persona abre el enlace. */
+      DB.guardarPerfil({ nombre: d.nombre, provincia: d.provincia,
                          canton: d.canton, meta: +d.meta });
-      DB.persistir();
-      UI.toast('Perfil actualizado', 'Los cambios ya se reflejan en toda la aplicación.');
+
+      if (correoNuevo && DB.state.modo === 'nube' && window.Nube) {
+        try {
+          await Nube.cambiarCorreo(d.correo.trim());
+          UI.toast('Confirme el correo nuevo',
+            'Se envió un enlace a ' + d.correo.trim() + '. El cambio se aplica al abrirlo.',
+            'info', 9000);
+        } catch (err) {
+          form.correo.value = u.correo;
+          UI.toast('No se pudo cambiar el correo', Nube.traducir(err), 'error', 8000);
+        }
+      } else {
+        if (correoNuevo) DB.guardarPerfil({ correo: d.correo.trim() });
+        UI.toast('Perfil actualizado', 'Los cambios ya se reflejan en toda la aplicación.');
+      }
       Router.resolver();
     });
 
@@ -210,14 +226,42 @@ Screens.perfil = {
       document.getElementById('c-medidor').dataset.level = nueva.value ? UI.fortaleza(nueva.value) : 0;
     });
 
+    const limpiarClave = () => {
+      formClave.reset();
+      formClave.querySelectorAll('.field').forEach(f => {
+        f.classList.remove('is-valid', 'is-invalid');
+        f.querySelector('.field-msg')?.replaceChildren();
+      });
+      document.getElementById('c-medidor').dataset.level = 0;
+    };
+
     formClave.addEventListener('submit', async e => {
       e.preventDefault();
       if (!UI.validar(formClave)) return;
-      await UI.cargando(document.getElementById('c-guardar'), 900);
-      formClave.reset();
-      formClave.querySelectorAll('.field').forEach(f => f.classList.remove('is-valid', 'is-invalid'));
-      document.getElementById('c-medidor').dataset.level = 0;
-      UI.toast('Contraseña actualizada', 'Deberá usarla la próxima vez que inicie sesión.');
+      const boton = document.getElementById('c-guardar');
+
+      if (DB.state.modo !== 'nube' || !window.Nube) {
+        await UI.cargando(boton, 900);
+        limpiarClave();
+        UI.toast('Contraseña actualizada', 'Deberá usarla la próxima vez que inicie sesión.');
+        return;
+      }
+
+      boton.classList.add('is-loading');
+      boton.setAttribute('aria-busy', 'true');
+      try {
+        /* Firebase exige autenticación reciente para cambiar la clave, así que
+           la contraseña actual del formulario sirve para reautenticar. */
+        await Nube.cambiarClave(formClave.actual.value, formClave.nueva.value);
+        limpiarClave();
+        UI.toast('Contraseña actualizada', 'Deberá usarla la próxima vez que inicie sesión.');
+      } catch (err) {
+        UI.marcar(formClave.actual, Nube.traducir(err));
+        UI.toast('No se cambió la contraseña', Nube.traducir(err), 'error', 7000);
+      } finally {
+        boton.classList.remove('is-loading');
+        boton.removeAttribute('aria-busy');
+      }
     });
 
     document.getElementById('p-exportar').addEventListener('click', async e => {
@@ -235,7 +279,12 @@ Screens.perfil = {
           <div class="field" style="margin-top:var(--s-4)">
             <label for="del-conf">Escriba <b class="mono">ELIMINAR</b> para confirmar</label>
             <input class="input" id="del-conf" type="text" autocomplete="off" placeholder="ELIMINAR">
-          </div>`,
+          </div>
+          ${DB.state.modo === 'nube' ? `
+            <div class="field">
+              <label for="del-clave">Confirme con su contraseña</label>
+              <input class="input" id="del-clave" type="password" autocomplete="current-password">
+            </div>` : ''}`,
         acciones: [
           { texto: 'Cancelar', clase: 'btn-ghost' },
           { texto: 'Eliminar definitivamente', clase: 'btn-danger', icono: 'basura', onClick: () => {
@@ -245,10 +294,26 @@ Screens.perfil = {
                 UI.toast('Confirmación incompleta', 'Escriba ELIMINAR para continuar.', 'error');
                 return false;   // mantiene la ventana abierta
               }
-              UI.toast('Cuenta eliminada', 'En el prototipo los datos se conservan para poder seguir navegando.', 'info');
-              DB.state.autenticado = false;
-              DB.persistir();
-              Router.ir('/acceso');
+              if (DB.state.modo !== 'nube' || !window.Nube) {
+                UI.toast('Cuenta eliminada',
+                  'Sin conexión, los datos simulados se conservan para poder seguir navegando.', 'info');
+                DB.state.autenticado = false;
+                DB.persistir();
+                Router.ir('/acceso');
+                return;
+              }
+
+              const clave = document.getElementById('del-clave');
+              if (!clave.value) {
+                clave.closest('.field').classList.add('is-invalid');
+                UI.toast('Falta la contraseña', 'Se pide para confirmar que es usted.', 'error');
+                return false;
+              }
+              UI.cerrarModal();
+              UI.toast('Eliminando la cuenta…', 'Borrando registros, insignias y perfil.', 'info', 6000);
+              Nube.borrarCuenta(clave.value)
+                .then(() => UI.toast('Cuenta eliminada', 'Todos sus datos fueron borrados.', 'info'))
+                .catch(err => UI.toast('No se eliminó la cuenta', Nube.traducir(err), 'error', 9000));
             } }
         ]
       });

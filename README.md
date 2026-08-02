@@ -5,8 +5,15 @@ Prototipo de alta fidelidad, navegable e interactivo. Cubre los diez casos de us
 Sostenibles e Innovadoras en el Marco del ODS 13* (Universidad Fidélitas, SC-302
 Documentación del Software).
 
-No hay backend: toda la información proviene de una capa de datos simulada en el
-navegador. La navegación entre pantallas se hace con clics reales.
+El prototipo funciona en dos modos y cambia de uno a otro solo:
+
+- **Modo nube** — cuentas reales con Firebase Authentication y datos reales en
+  Cloud Firestore. Es el modo normal cuando hay conexión y el proyecto está
+  configurado.
+- **Modo local** — si Firebase no responde, o si se abre el archivo con doble
+  clic (el navegador bloquea los módulos ES en `file://`), la aplicación arranca
+  igual con datos simulados guardados en el navegador. Ninguna pantalla se
+  rompe; la de acceso lo advierte.
 
 ---
 
@@ -35,17 +42,80 @@ npx serve .
 
 Luego abra <http://localhost:8080>.
 
-### Credenciales de demostración
+### Cuentas
 
-No hay una cuenta real detrás: **cualquier correo con formato válido y una
-contraseña de ocho caracteres o más inician la sesión**.
+**En modo nube** hay que crear una cuenta desde la pantalla de registro; son
+cuentas reales de Firebase Authentication. Al crearla se puede marcar *Cargar
+noventa días de actividad de ejemplo*, que siembra un historial para poder
+recorrer progreso, insignias y reportes desde el primer minuto. Sin esa casilla
+la cuenta empieza vacía y se ven los estados vacíos de cada pantalla.
 
-Para ver el estado de error de la pantalla, que también forma parte del
-prototipo, escriba `incorrecta` como contraseña.
+**En modo local** no hay cuenta real: cualquier correo con formato válido y una
+contraseña de ocho caracteres o más inician la sesión, y la contraseña
+`incorrecta` sirve para ver el estado de error. La sesión abre con una cuenta
+ficticia (*Mariana Solís Vargas*, alias público *Yigüirro-418*).
 
-La sesión abre siempre con la misma cuenta ficticia de demostración
-(*Mariana Solís Vargas*, alias público *Yigüirro-418*), que es la que alimenta
-el historial, los gráficos y la comparativa.
+---
+
+## Configuración de Firebase
+
+El código ya viene conectado al proyecto `prototipo-ods13`. Faltan tres pasos en
+la consola, que solo puede hacer quien sea propietario del proyecto. Mientras no
+se hagan, la aplicación sigue abriendo en modo local y la pantalla de acceso
+explica por qué.
+
+### 1. Activar Authentication
+
+Consola de Firebase → **Authentication** → *Comenzar* → pestaña **Sign-in
+method** → habilitar **Correo electrónico/contraseña**.
+
+Sin este paso, crear una cuenta devuelve `auth/configuration-not-found`, que la
+pantalla traduce a un mensaje explícito.
+
+### 2. Crear la base de datos de Firestore
+
+Consola → **Firestore Database** → *Crear base de datos* → ubicación
+`southamerica-east1` (o la más cercana) → empezar en **modo de producción**, que
+deniega todo por defecto. Las reglas del paso siguiente abren exactamente lo
+necesario.
+
+### 3. Desplegar las reglas de seguridad
+
+```bash
+firebase login          # con la cuenta dueña del proyecto
+firebase deploy --only firestore:rules
+```
+
+`firestore.rules` está en la raíz del repositorio. **Es lo único que protege los
+datos**: la `apiKey` que aparece en `assets/js/nube.js` es un identificador
+público de Firebase Web, viaja en el cliente por diseño y no protege nada.
+
+### Publicar en Firebase Hosting (opcional)
+
+```bash
+firebase deploy --only hosting
+```
+
+Queda en `https://prototipo-ods13.web.app`. Si en cambio se publica en otro
+dominio (por ejemplo GitHub Pages), hay que agregarlo en **Authentication →
+Settings → Authorized domains**, o el inicio de sesión devolverá
+`auth/unauthorized-domain`.
+
+### Modelo de datos
+
+```
+usuarios/{uid}                      perfil                (clase Usuario)
+usuarios/{uid}/registros/{id}       acciones registradas  (clase RegistroAccion)
+usuarios/{uid}/notificaciones/{id}  avisos                (clase Notificacion)
+usuarios/{uid}/logros/{insignia}    insignias obtenidas   (clase LogroUsuario)
+comunidad/{uid}                     alias, provincia y totales
+```
+
+Las reglas hacen privado todo lo que cuelga de `usuarios/{uid}`: solo su dueño
+lee y escribe. `comunidad` es la única colección legible por otras cuentas, y su
+lista de campos está cerrada en las reglas, de modo que aunque el cliente
+intentara publicar un nombre o un correo la escritura se rechazaría. Eso es lo
+que permite la comparativa anónima del UC8.
 
 ---
 
@@ -82,6 +152,10 @@ Las relaciones del diagrama de casos de uso están representadas en el prototipo
 prototipo-ods13/
 ├── index.html                  Único documento: carga estilos, datos y pantallas
 ├── README.md
+├── firebase.json               Configuración de Hosting y Firestore
+├── firestore.rules             Reglas de seguridad (lo único que protege los datos)
+├── firestore.indexes.json
+├── .firebaserc                 Proyecto por defecto
 └── assets/
     ├── css/
     │   ├── tokens.css          Color, tipografía, espaciado, elevación, movimiento
@@ -95,7 +169,8 @@ prototipo-ods13/
     │   ├── ui.js               Avisos, modales, validación, carga, cinta de carbono
     │   ├── charts.js           Configuración de Chart.js con la paleta del sistema
     │   ├── router.js           Enrutador por fragmento, guardia de sesión y armazón
-    │   ├── app.js              Arranque
+    │   ├── nube.js             Firebase Auth + Firestore (único módulo ES)
+    │   ├── app.js              Arranque y repliegue a modo local
     │   └── screens/            Una pantalla por caso de uso
     └── vendor/
         └── chart.umd.js        Chart.js 4.4.4 (local, para funcionar sin conexión)
@@ -161,15 +236,27 @@ interfaz.
 - **Movimiento**: transiciones cortas y una sola animación de entrada por
   pantalla. Se respeta `prefers-reduced-motion`.
 - **Impresión**: el reporte de emisiones (UC9) tiene hoja de impresión propia.
+- **Escrituras optimistas**: la interfaz aplica el cambio en memoria y replica a
+  Firestore en segundo plano. Nada espera a la red; si una escritura falla, se
+  avisa con un mensaje traducido en lugar de un código de Firebase.
+- **Repliegue**: si Firebase no arranca en cuatro segundos, la aplicación
+  continúa en modo local en vez de quedarse en la pantalla de carga.
 
 ---
 
 ## Nota sobre los datos
 
-El historial se genera con un generador pseudoaleatorio con semilla fija, de modo
-que los gráficos se ven iguales en cada recarga. Las acciones que registre y las
-preferencias que guarde se conservan en `localStorage`; para volver al estado
-inicial, borre el almacenamiento del sitio o ejecute en la consola del navegador:
+El historial de ejemplo se genera con un generador pseudoaleatorio con semilla
+fija, de modo que los gráficos se ven iguales en cada recarga.
+
+En **modo nube** todo se guarda en Firestore y `localStorage` no se usa. La
+comparativa comunitaria muestra las cuentas reales registradas; mientras haya
+menos de cinco, se completa con participantes simulados —marcados como tales en
+la tabla— para que la pantalla siga siendo legible.
+
+En **modo local** las acciones y preferencias se conservan en `localStorage`;
+para volver al estado inicial, borre el almacenamiento del sitio o ejecute en la
+consola del navegador:
 
 ```js
 localStorage.removeItem('ods13.proto.v1'); location.reload();

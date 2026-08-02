@@ -1,0 +1,63 @@
+rules_version = '2';
+
+/*
+ * Reglas de seguridad de Cloud Firestore.
+ *
+ * Principio: los datos personales son privados y nadie más que su dueño los
+ * lee o los escribe. Lo único compartido es la colección `comunidad`, que por
+ * diseño contiene solo alias, provincia y totales: es lo que hace posible la
+ * comparativa anónima del UC8 sin exponer nombres ni correos.
+ *
+ * Sin estas reglas desplegadas la base queda abierta o cerrada por completo,
+ * según el modo con que se haya creado. La apiKey del cliente no protege nada:
+ * esto sí.
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function esDuenno(uid) {
+      return autenticado() && request.auth.uid == uid;
+    }
+
+    /* ---- Datos personales: perfil, registros, notificaciones y logros ---- */
+    match /usuarios/{uid} {
+      allow read, write: if esDuenno(uid);
+
+      match /{documento=**} {
+        allow read, write: if esDuenno(uid);
+      }
+    }
+
+    /* ---- Comparativa comunitaria (UC8) ----------------------------------
+     * Cualquier cuenta autenticada puede leerla, porque de eso trata el caso
+     * de uso, pero solo el dueño escribe su propia fila. La lista de campos
+     * es cerrada: aunque el cliente intentara publicar nombre o correo, la
+     * escritura se rechaza.
+     */
+    match /comunidad/{uid} {
+      allow read: if autenticado();
+
+      allow write: if esDuenno(uid)
+        && request.resource.data.keys().hasOnly(['alias', 'zona', 'co2', 'acciones', 'actualizado'])
+        && request.resource.data.alias is string
+        && request.resource.data.alias.size() <= 40
+        && request.resource.data.zona is string
+        && request.resource.data.zona.size() <= 40
+        && request.resource.data.co2 is number
+        && request.resource.data.co2 >= 0
+        && request.resource.data.acciones is int
+        && request.resource.data.acciones >= 0;
+
+      allow delete: if esDuenno(uid);
+    }
+
+    /* ---- Todo lo demás queda denegado ----------------------------------- */
+    match /{documento=**} {
+      allow read, write: if false;
+    }
+  }
+}

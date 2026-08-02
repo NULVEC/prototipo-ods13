@@ -16,6 +16,7 @@ Screens.comunidad = {
     const zonas = ['todas', ...new Set(completa.map(c => c.zona))];
     const tabla = this.zona === 'todas' ? completa : completa.filter(c => c.zona === this.zona || c.alias === alias);
 
+    const simulados = tabla.filter(c => c.simulado).length;
     const yo = completa.find(c => c.alias === alias);
     const promedio = completa.reduce((a, c) => a + c.co2, 0) / completa.length;
     const lider = completa[0];
@@ -130,9 +131,11 @@ Screens.comunidad = {
                   const d = c.co2 - promedio;
                   return `<tr class="${c.alias === alias ? 'is-me' : ''}">
                     <td class="mono">${c.pos}</td>
-                    <td><span style="display:inline-flex;align-items:center;gap:8px">
+                    <td><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
                       <span class="avatar avatar-sm">${c.alias.slice(0, 2).toUpperCase()}</span>
-                      <b>${UI.esc(c.alias)}</b>${c.alias === alias ? ' <span class="tag tag-azul">usted</span>' : ''}
+                      <b>${UI.esc(c.alias)}</b>
+                      ${c.alias === alias ? '<span class="tag tag-azul">usted</span>' : ''}
+                      ${c.simulado ? '<span class="tag">simulado</span>' : ''}
                     </span></td>
                     <td>${UI.esc(c.zona)}</td>
                     <td class="align-r mono">${c.acciones}</td>
@@ -148,6 +151,14 @@ Screens.comunidad = {
             </table>
           </div>
         </div>
+
+        ${simulados ? `
+          <p class="text-sm muted" style="margin-top:var(--s-4);display:flex;gap:8px;align-items:flex-start">
+            ${Icon.get('info', 15)}
+            <span>${simulados} de los ${tabla.length} participantes son simulados. Se incluyen
+            para que la comparativa sea legible mientras la comunidad crece; desaparecen a medida
+            que se registran cuentas reales.</span>
+          </p>` : ''}
       </section>`;
   },
 

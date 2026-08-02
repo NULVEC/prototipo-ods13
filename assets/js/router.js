@@ -177,8 +177,18 @@ const Router = (() => {
     UI.$$('[data-cerrar-nav]').forEach(b => b.addEventListener('click', () => document.body.classList.remove('nav-open')));
     UI.$$('.sidebar .nav-item').forEach(a => a.addEventListener('click', () => document.body.classList.remove('nav-open')));
 
-    UI.$$('[data-salir]').forEach(a => a.addEventListener('click', e => {
+    UI.$$('[data-salir]').forEach(a => a.addEventListener('click', async e => {
       e.preventDefault();
+      if (DB.state.modo === 'nube' && window.Nube && DB.state.uid) {
+        try {
+          await Nube.salir();   // `onAuthStateChanged` limpia y redibuja
+          UI.toast('Sesión cerrada', 'Sus registros quedan guardados en su cuenta.', 'info');
+          return;
+        } catch (err) {
+          UI.toast('No se pudo cerrar la sesión', Nube.traducir(err), 'error');
+          return;
+        }
+      }
       DB.state.autenticado = false;
       DB.persistir();
       ir('/acceso');

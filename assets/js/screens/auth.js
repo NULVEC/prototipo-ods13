@@ -64,6 +64,8 @@ Screens.registro = {
             </div>
 
             <form id="form-registro" novalidate>
+              <div id="registro-error" hidden></div>
+
               <div class="field">
                 <label for="r-nombre">Nombre completo <span class="req" aria-hidden="true">*</span></label>
                 <input class="input" id="r-nombre" name="nombre" type="text"
@@ -122,6 +124,14 @@ Screens.registro = {
                 <p class="field-msg" id="r-terminos-msg"></p>
               </div>
 
+              <div class="field">
+                <label class="check">
+                  <input type="checkbox" id="r-ejemplo" name="ejemplo" checked>
+                  <span>Cargar noventa días de actividad de ejemplo para poder recorrer las
+                        pantallas de progreso, insignias y reportes desde el primer día.</span>
+                </label>
+              </div>
+
               <button class="btn btn-primary btn-block" type="submit" id="r-enviar">
                 ${Icon.get('check', 17)}<span>Crear cuenta</span>
               </button>
@@ -167,17 +177,48 @@ Screens.registro = {
         return;
       }
 
-      await UI.cargando(document.getElementById('r-enviar'), 1100);
-
+      const boton = document.getElementById('r-enviar');
       const datos = Object.fromEntries(new FormData(form));
-      DB.state.usuario.nombre = datos.nombre;
-      DB.state.usuario.correo = datos.correo;
-      DB.state.usuario.provincia = datos.provincia;
-      DB.state.autenticado = true;
-      DB.persistir();
+      const zonaError = document.getElementById('registro-error');
+      zonaError.hidden = true;
 
-      UI.toast('Cuenta creada', 'Ya puede registrar su primera acción sostenible.');
-      Router.ir('/inicio');
+      /* Sin Firebase el prototipo sigue funcionando: crea la cuenta en memoria
+         y continúa con los datos simulados. */
+      if (DB.state.modo !== 'nube' || !window.Nube) {
+        await UI.cargando(boton, 1100);
+        DB.guardarPerfil({ nombre: datos.nombre, correo: datos.correo, provincia: datos.provincia });
+        DB.state.autenticado = true;
+        DB.persistir();
+        UI.toast('Cuenta creada', 'Ya puede registrar su primera acción sostenible.');
+        Router.ir('/inicio');
+        return;
+      }
+
+      boton.classList.add('is-loading');
+      boton.setAttribute('aria-busy', 'true');
+      try {
+        await Nube.crearCuenta({
+          correo: datos.correo.trim(),
+          clave: datos.clave,
+          nombre: datos.nombre.trim(),
+          provincia: datos.provincia,
+          conEjemplo: form.ejemplo.checked
+        });
+        UI.toast('Cuenta creada', 'Ya puede registrar su primera acción sostenible.');
+        // El resto lo hace `onAuthStateChanged`: descarga los datos y navega.
+      } catch (e) {
+        zonaError.hidden = false;
+        zonaError.innerHTML = `
+          <div class="notice notice-error" style="margin-bottom:var(--s-5)" role="alert">
+            ${Icon.get('alertaCirculo', 17)}
+            <div><b>No se pudo crear la cuenta.</b> ${UI.esc(Nube.traducir(e))}</div>
+          </div>`;
+        zonaError.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        UI.toast('No se creó la cuenta', Nube.traducir(e), 'error', 7000);
+      } finally {
+        boton.classList.remove('is-loading');
+        boton.removeAttribute('aria-busy');
+      }
     });
   }
 };
@@ -210,14 +251,23 @@ Screens.acceso = {
               <p>Ingrese con el correo que registró en la plataforma.</p>
             </div>
 
-            <div class="notice notice-info" style="margin-bottom:var(--s-6)">
-              ${Icon.get('info', 17)}
-              <div>
-                <b>Prototipo de demostración.</b> Cualquier correo con formato válido y una contraseña
-                de ocho caracteres o más inician la sesión. Para ver el estado de error, escriba
-                <span class="mono">incorrecta</span> como contraseña.
-              </div>
-            </div>
+            ${DB.state.modo === 'nube' ? `
+              <div class="notice notice-info" style="margin-bottom:var(--s-6)">
+                ${Icon.get('escudo', 17)}
+                <div>
+                  Las cuentas son reales: se validan contra Firebase Authentication y sus registros
+                  quedan guardados en su cuenta. Si es la primera vez, cree una.
+                </div>
+              </div>` : `
+              <div class="notice notice-warn" style="margin-bottom:var(--s-6)">
+                ${Icon.get('alerta', 17)}
+                <div>
+                  <b>Modo sin conexión.</b> No se pudo contactar a Firebase, así que el prototipo
+                  trabaja con datos simulados en este dispositivo. Cualquier correo con formato
+                  válido y una contraseña de ocho caracteres inician la sesión; escriba
+                  <span class="mono">incorrecta</span> para ver el estado de error.
+                </div>
+              </div>`}
 
             <form id="form-acceso" novalidate>
               <div id="acceso-error" hidden></div>
@@ -281,7 +331,23 @@ Screens.acceso = {
         acciones: [
           { texto: 'Cancelar', clase: 'btn-ghost' },
           { texto: 'Enviar enlace', clase: 'btn-primary', icono: 'correo',
-            onClick: () => UI.toast('Enlace enviado', 'Revise su bandeja de entrada y la carpeta de no deseados.', 'info') }
+            onClick: () => {
+              const correo = document.getElementById('m-correo').value.trim();
+              if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(correo)) {
+                document.getElementById('m-correo').closest('.field').classList.add('is-invalid');
+                UI.toast('Correo no válido', 'Escriba una dirección con formato correcto.', 'error');
+                return false;     // mantiene la ventana abierta
+              }
+              if (DB.state.modo === 'nube' && window.Nube) {
+                Nube.recuperarClave(correo)
+                  .then(() => UI.toast('Enlace enviado',
+                    'Revise su bandeja de entrada y la carpeta de no deseados.', 'info'))
+                  .catch(e => UI.toast('No se pudo enviar', Nube.traducir(e), 'error', 7000));
+              } else {
+                UI.toast('Enlace enviado',
+                  'Revise su bandeja de entrada y la carpeta de no deseados.', 'info');
+              }
+            } }
         ]
       });
     });
@@ -291,30 +357,47 @@ Screens.acceso = {
       zonaError.hidden = true;
       if (!UI.validar(form)) return;
 
-      await UI.cargando(document.getElementById('a-enviar'), 950);
+      const boton = document.getElementById('a-enviar');
 
-      /* Credenciales simuladas: entra cualquier correo con formato válido. Se
-         reserva una contraseña concreta para poder mostrar el estado de error
-         sin necesidad de exponer una cuenta real en la pantalla. */
-      const rechazado = form.clave.value.trim().toLowerCase() === 'incorrecta';
-      if (rechazado) {
+      const fallo = motivo => {
         zonaError.hidden = false;
         zonaError.innerHTML = `
           <div class="notice notice-error" style="margin-bottom:var(--s-5)" role="alert">
             ${Icon.get('alertaCirculo', 17)}
-            <div><b>No pudimos iniciar la sesión.</b> El correo o la contraseña no coinciden con
-            ninguna cuenta. Verifique los datos o cree una cuenta nueva.</div>
+            <div><b>No pudimos iniciar la sesión.</b> ${UI.esc(motivo)}</div>
           </div>`;
         form.clave.value = '';
         form.clave.focus();
-        UI.toast('Credenciales incorrectas', 'Revise el correo y la contraseña.', 'error');
+        UI.toast('No se inició la sesión', motivo, 'error', 7000);
+      };
+
+      /* Sin Firebase se conserva el acceso simulado, con una contraseña
+         reservada para poder seguir mostrando el estado de error. */
+      if (DB.state.modo !== 'nube' || !window.Nube) {
+        await UI.cargando(boton, 950);
+        if (form.clave.value.trim().toLowerCase() === 'incorrecta') {
+          fallo('El correo o la contraseña no coinciden con ninguna cuenta.');
+          return;
+        }
+        DB.state.autenticado = true;
+        DB.persistir();
+        UI.toast('Bienvenido de vuelta', `Lleva ${DB.racha()} días seguidos registrando acciones.`);
+        Router.ir('/inicio');
         return;
       }
 
-      DB.state.autenticado = true;
-      DB.persistir();
-      UI.toast('Bienvenido de vuelta', `Lleva ${DB.racha()} días seguidos registrando acciones.`);
-      Router.ir('/inicio');
+      boton.classList.add('is-loading');
+      boton.setAttribute('aria-busy', 'true');
+      try {
+        await Nube.entrar(form.correo.value.trim(), form.clave.value);
+        UI.toast('Sesión iniciada', 'Cargando sus registros…', 'info', 2500);
+        // `onAuthStateChanged` descarga los datos y dibuja la pantalla.
+      } catch (e) {
+        fallo(Nube.traducir(e));
+      } finally {
+        boton.classList.remove('is-loading');
+        boton.removeAttribute('aria-busy');
+      }
     });
   }
 };

@@ -296,10 +296,98 @@ const DB = (() => {
     usuario,
     registros: generarHistorial(),
     notificaciones: generarNotificaciones(),
-    insigniasNuevas: []           // se llena al desbloquear una insignia en UC4
+    insigniasNuevas: [],          // se llena al desbloquear una insignia en UC4
+
+    /* 'local' = datos simulados en el navegador (sin conexión o sin Firebase).
+       'nube'  = cuentas y datos reales en Firebase Auth + Cloud Firestore.
+       Las pantallas no consultan este valor: leen siempre de `state` y las
+       escrituras se replican solas. Solo la pantalla de acceso lo mira, para
+       explicar con qué está trabajando la persona. */
+    modo: 'local',
+    uid: null,
+    comunidadReal: []
   };
 
+  /* Cola de escrituras: replica en Firestore lo que ya se aplicó en memoria.
+     La interfaz nunca espera a la red; si una escritura falla se avisa, pero
+     la pantalla no se queda bloqueada. */
+  function replicar(operacion, descripcion) {
+    if (state.modo !== 'nube' || !state.uid || !window.Nube) return;
+    Promise.resolve()
+      .then(operacion)
+      .catch(e => {
+        console.error('Firestore (' + descripcion + '):', e);
+        window.UI?.toast('No se pudo guardar en la nube', Nube.traducir(e), 'error', 8000);
+      });
+  }
+
+  /** Perfil inicial de una cuenta recién creada. */
+  function perfilNuevo({ uid, nombre, correo, provincia }) {
+    const n = Math.floor(Math.random() * 900) + 100;
+    return {
+      id: 'USR-' + uid.slice(0, 8).toUpperCase(),
+      nombre, correo,
+      alias: 'Yigüirro-' + n,
+      provincia: provincia || 'San José',
+      canton: '',
+      meta: 45,
+      desde: hoyISO(),
+      notificaciones: { recordatorio: true, logros: true, resumen: true, comunidad: false },
+      frecuencia: 'diaria',
+      hora: '19:00'
+    };
+  }
+
+  /** Historial de ejemplo para sembrar una cuenta nueva que lo pida. */
+  function datosDeEjemplo() {
+    return { registros: generarHistorial(), notificaciones: generarNotificaciones() };
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Cambios de modo                                                     */
+  /* ------------------------------------------------------------------ */
+
+  /** Vuelca en memoria lo que se descargó de Firestore. */
+  function iniciarNube(uid, correo, datos, comunidad) {
+    state.modo = 'nube';
+    state.uid = uid;
+    state.autenticado = true;
+    state.usuario = datos.perfil
+      ? { ...usuario, ...datos.perfil, correo: correo || datos.perfil.correo }
+      : perfilNuevo({ uid, nombre: correo, correo, provincia: 'San José' });
+    state.registros = datos.registros || [];
+    state.notificaciones = datos.notificaciones || [];
+    state.logrosGuardados = datos.logros || [];
+    state.comunidadReal = comunidad || [];
+  }
+
+  /** Sesión cerrada: se limpia todo rastro del usuario anterior. */
+  function cerrarNube() {
+    state.modo = 'nube';
+    state.uid = null;
+    state.autenticado = false;
+    state.registros = [];
+    state.notificaciones = [];
+    state.logrosGuardados = [];
+    state.comunidadReal = [];
+  }
+
+  /** Repliegue a los datos simulados cuando Firebase no está disponible. */
+  function usarLocal() {
+    state.modo = 'local';
+    state.uid = null;
+    state.usuario = { ...usuario };
+    state.registros = generarHistorial();
+    state.notificaciones = generarNotificaciones();
+    state.logrosGuardados = [];
+    state.comunidadReal = [];
+    restaurar();
+  }
+
   function persistir() {
+    // En modo nube manda Firestore: el almacenamiento local solo sirve para
+    // que el prototipo conserve estado cuando corre sin conexión.
+    if (state.modo === 'nube') return;
     try {
       localStorage.setItem(KEY, JSON.stringify({
         autenticado: state.autenticado,
@@ -311,6 +399,7 @@ const DB = (() => {
   }
 
   function restaurar() {
+    if (state.modo === 'nube') return;
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return;
@@ -430,22 +519,62 @@ const DB = (() => {
   /** Estado de cada insignia con su avance (clase LogroUsuario). */
   function logros() {
     const m = metricas();
+    const guardados = Object.fromEntries((state.logrosGuardados || []).map(l => [l.id, l]));
     return insignias.map(i => {
       const valor = m[i.campo] || 0;
       const pct = Math.min(100, Math.round(valor / i.meta * 100));
-      return { ...i, valor: +valor.toFixed(1), pct, obtenida: valor >= i.meta };
+      const obtenida = valor >= i.meta;
+      return {
+        ...i, valor: +valor.toFixed(1), pct, obtenida,
+        // La fecha viene de Firestore; en modo local la insignia no la lleva.
+        desde: guardados[i.id]?.fecha || null
+      };
     });
   }
 
-  /** Tabla de comunidad con el usuario actual insertado y ordenada. */
+  /** Deja constancia de una insignia recién obtenida (clase LogroUsuario). */
+  function anotarLogro(insignia) {
+    if ((state.logrosGuardados || []).some(l => l.id === insignia.id)) return;
+    const l = { id: insignia.id, nombre: insignia.nombre, fecha: new Date().toISOString() };
+    (state.logrosGuardados = state.logrosGuardados || []).push(l);
+    replicar(() => Nube.registrarLogro(state.uid, insignia.id, insignia.nombre), 'logro');
+  }
+
+  /**
+   * Tabla de la comparativa comunitaria (UC8).
+   * En modo nube se usan los participantes reales de la colección `comunidad`.
+   * Si todavía hay menos de cinco cuentas registradas, se completa con los
+   * participantes simulados para que la pantalla siga siendo demostrable; en
+   * ese caso quedan marcados con `simulado` y la pantalla lo advierte.
+   */
   function tablaComunidad() {
-    const miCo2 = sumaCO2(state.registros);
-    const lista = comunidad.map(c => c.esYo
-      ? { ...c, alias: state.usuario.alias, co2: +miCo2.toFixed(1), acciones: state.registros.length }
-      : { ...c });
+    const miCo2 = +sumaCO2(state.registros).toFixed(1);
+    const yo = {
+      alias: state.usuario.alias, zona: state.usuario.provincia,
+      co2: miCo2, acciones: state.registros.length, esYo: true
+    };
+
+    let lista;
+    if (state.modo === 'nube') {
+      const otros = state.comunidadReal
+        .filter(c => c.uid !== state.uid)
+        .map(c => ({ alias: c.alias, zona: c.zona, co2: +(c.co2 || 0), acciones: c.acciones || 0 }));
+      const relleno = otros.length >= 4
+        ? []
+        : comunidad.filter(c => !c.esYo).slice(0, 9 - otros.length).map(c => ({ ...c, simulado: true }));
+      lista = [yo, ...otros, ...relleno];
+    } else {
+      lista = comunidad.map(c => c.esYo ? yo : { ...c, simulado: true });
+    }
+
     lista.sort((a, b) => b.co2 - a.co2);
     lista.forEach((c, i) => c.pos = i + 1);
     return lista;
+  }
+
+  /** Cuántos participantes de la tabla son simulados (aviso de la pantalla). */
+  function comunidadSimulada() {
+    return tablaComunidad().filter(c => c.simulado).length;
   }
 
   /* ================================================================== */
@@ -466,17 +595,39 @@ const DB = (() => {
     };
     state.registros.push(reg);
     persistir();
+    replicar(() => Nube.agregarRegistro(state.uid, reg), 'registro nuevo');
     return reg;
   }
 
   function eliminarRegistro(id) {
     const i = state.registros.findIndex(r => r.id === id);
-    if (i >= 0) { state.registros.splice(i, 1); persistir(); }
+    if (i < 0) return;
+    state.registros.splice(i, 1);
+    persistir();
+    replicar(() => Nube.eliminarRegistro(state.uid, id), 'borrado de registro');
   }
 
   function marcarLeidas(ids) {
+    const tocadas = state.notificaciones
+      .filter(n => !n.leida && (!ids || ids.includes(n.id)))
+      .map(n => n.id);
     state.notificaciones.forEach(n => { if (!ids || ids.includes(n.id)) n.leida = true; });
     persistir();
+    if (tocadas.length) replicar(() => Nube.marcarNotificaciones(state.uid, tocadas), 'notificaciones leídas');
+  }
+
+  /** Alta de notificación generada por el temporizador simulado (UC6). */
+  function agregarNotificacion(n) {
+    state.notificaciones.unshift(n);
+    persistir();
+    replicar(() => Nube.crearNotificacion(state.uid, n), 'notificación nueva');
+  }
+
+  /** Guarda el perfil editado en UC10. */
+  function guardarPerfil(cambios) {
+    Object.assign(state.usuario, cambios);
+    persistir();
+    replicar(() => Nube.guardarPerfil(state.uid, state.usuario), 'perfil');
   }
 
   function noLeidas() { return state.notificaciones.filter(n => !n.leida).length; }
@@ -543,6 +694,8 @@ const DB = (() => {
     serieDiaria, serieSemanal, serieMensual, porCategoria,
     racha, metricas, logros, tablaComunidad,
     agregarRegistro, eliminarRegistro, marcarLeidas, noLeidas,
+    agregarNotificacion, guardarPerfil, anotarLogro, comunidadSimulada,
+    perfilNuevo, datosDeEjemplo, iniciarNube, cerrarNube, usarLocal,
     fmt, equivalencia, hoyISO
   };
 })();

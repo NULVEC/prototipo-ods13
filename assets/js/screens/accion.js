@@ -206,7 +206,9 @@ Screens.accion = {
       poblarTipos();
 
       if (nuevas.length) {
-        /* Relación «extend»: UC7 solo ocurre si el registro alcanza la meta. */
+        /* Relación «extend»: UC7 solo ocurre si el registro alcanza la meta.
+           El logro se deja anotado para que conste con su fecha. */
+        nuevas.forEach(DB.anotarLogro);
         const ins = nuevas[0];
         UI.modal({
           etiqueta: `Insignia desbloqueada: ${ins.nombre}`,

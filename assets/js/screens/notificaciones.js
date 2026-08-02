@@ -158,7 +158,7 @@ Screens.notificaciones = {
     document.getElementById('n-disparar').addEventListener('click', async e => {
       await UI.cargando(e.currentTarget, 800);
       const pendiente = DB.enUltimosDias(1).length === 0;
-      DB.state.notificaciones.unshift({
+      DB.agregarNotificacion({
         id: 'N-' + Date.now().toString().slice(-5),
         tipo: pendiente ? 'recordatorio' : 'resumen',
         origen: 'sistema', leida: false, fecha: new Date().toISOString(),
@@ -167,7 +167,6 @@ Screens.notificaciones = {
           ? `Su racha de ${DB.racha()} días se mantiene si registra una acción antes de la medianoche.`
           : `Hoy lleva ${DB.fmt.co2(DB.sumaCO2(DB.enUltimosDias(1)))} kg de CO₂e evitados. Buen cierre de jornada.`
       });
-      DB.persistir();
       UI.toast('Temporizador ejecutado', 'Se generó un aviso nuevo en la bandeja.', 'info');
       Router.resolver();
     });
@@ -181,7 +180,7 @@ Screens.notificaciones = {
       ['recordatorio', 'logros', 'resumen', 'comunidad'].forEach(k => u.notificaciones[k] = d.has(k));
       u.frecuencia = d.get('frecuencia');
       u.hora = d.get('hora');
-      DB.persistir();
+      DB.guardarPerfil({ notificaciones: u.notificaciones, frecuencia: u.frecuencia, hora: u.hora });
       UI.toast('Preferencias guardadas', `Recibirá el recordatorio ${u.frecuencia} a las ${u.hora}.`);
     });
 

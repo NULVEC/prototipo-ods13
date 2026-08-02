@@ -33,6 +33,20 @@
   <!-- Toda la aplicación se dibuja aquí según la ruta (#/...) -->
   <div id="app"></div>
 
+  <!-- Pantalla de arranque: se muestra mientras Firebase resuelve si hay
+       sesión abierta. La quita `Aplicacion.arrancar()`. -->
+  <div id="arranque" role="status" aria-live="polite">
+    <div class="arranque-marca">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 1.6 21 6.8v10.4L12 22.4 3 17.2V6.8z"/>
+        <path d="M8 15.4v-2.6M12 15.4v-5.2M16 15.4V8.6"/>
+      </svg>
+      <span>Registro y Seguimiento<br>de Acciones Climáticas</span>
+    </div>
+    <p class="arranque-estado">Estableciendo la sesión…</p>
+  </div>
+
   <!-- Librería de gráficos, servida localmente para funcionar sin conexión -->
   <script src="assets/vendor/chart.umd.js"></script>
 
@@ -56,5 +70,11 @@
   <!-- Enrutador y arranque -->
   <script src="assets/js/router.js"></script>
   <script src="assets/js/app.js"></script>
+
+  <!-- Capa de Firebase. Es el único módulo ES del proyecto y, por serlo, se
+       ejecuta después de todos los scripts anteriores: para entonces DB, UI,
+       Router y Aplicacion ya existen. Es también quien arranca la aplicación
+       una vez que sabe si hay sesión. -->
+  <script type="module" src="assets/js/nube.js"></script>
 </body>
 </html>
