@@ -9,3 +9,6 @@ desktop.ini
 
 # Dependencias (el prototipo no usa ninguna: Chart.js va versionado en assets/vendor)
 node_modules/
+
+# Caché local de la CLI de Firebase
+.firebase/
