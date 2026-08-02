@@ -65,7 +65,7 @@ Screens.perfil = {
                 </div>
 
                 <div class="field">
-                  <label for="p-meta">Meta mensual de CO₂e evitado</label>
+                  <label for="p-meta">Meta mensual de CO₂ evitado</label>
                   <div class="input-group" style="max-width:260px">
                     <input class="input" id="p-meta" name="meta" type="number" min="1" step="1"
                            value="${u.meta}" data-reglas="requerido numero" required>
@@ -139,7 +139,7 @@ Screens.perfil = {
                 <dt>Identificador</dt><dd>${UI.esc(u.id)}</dd>
                 <dt>Cuenta creada</dt><dd>${DB.fmt.fechaCorta(u.desde)} ${u.desde.slice(0, 4)}</dd>
                 <dt>Registros</dt><dd>${DB.state.registros.length}</dd>
-                <dt>CO₂e evitado</dt><dd>${DB.fmt.n(total, 1)} kg</dd>
+                <dt>CO₂ evitado</dt><dd>${DB.fmt.n(total, 1)} kg</dd>
                 <dt>Insignias</dt><dd>${obtenidas} de ${DB.insignias.length}</dd>
                 <dt>Racha actual</dt><dd>${DB.racha()} días</dd>
               </dl>

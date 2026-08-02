@@ -30,10 +30,12 @@ Screens.reporte = {
           <div style="display:flex;align-items:flex-start;gap:var(--s-5);flex-wrap:wrap">
             <div style="flex:1;min-width:260px">
               <span class="label-micro">Documento generado por el sistema</span>
-              <h1 style="margin:var(--s-2) 0 var(--s-3)">Reporte de emisiones evitadas</h1>
+              <h1 style="margin:var(--s-2) 0 var(--s-3)">Tu reporte de CO₂ evitado</h1>
               <p class="muted" style="max-width:62ch;margin:0">
-                Estimación del dióxido de carbono equivalente que ${UI.esc(u.nombre)} ha dejado de
-                emitir gracias a las acciones sostenibles registradas en la plataforma.
+                Todo el CO₂ que ${UI.esc(u.nombre)} no soltó al aire gracias a las acciones que
+                registró aquí: lo que le fue restando a su ${UI.termino('huella', 'huella de carbono')}.
+                Es un cálculo aproximado, hecho con lo que anotó cada día, y se puede descargar
+                o imprimir para entregarlo.
               </p>
             </div>
             <div style="display:flex;gap:var(--s-2);flex-wrap:wrap">
@@ -55,29 +57,29 @@ Screens.reporte = {
             <div><span class="label-micro">Folio</span><b>${folio}</b></div>
             <div><span class="label-micro">Usuario</span><b>${UI.esc(u.id)}</b></div>
             <div><span class="label-micro">Periodo</span><b>${this.meses} meses</b></div>
-            <div><span class="label-micro">Registros</span><b>${lista.length}</b></div>
+            <div><span class="label-micro">Acciones</span><b>${lista.length}</b></div>
             <div><span class="label-micro">Emitido el</span><b>${DB.fmt.fecha(DB.hoyISO())}</b></div>
           </div>
         </div>
       </section>
 
       <section class="section grid grid-3">
-        ${UI.readout({ etiqueta: 'Total evitado en el periodo', icono: 'globo',
-          valor: DB.fmt.n(total, 1), unidad: 'kg CO₂e',
-          pie: `Equivalente a ${DB.fmt.n(total / 21, 1)} árboles maduros durante un año` })}
-        ${UI.readout({ etiqueta: 'Línea base estimada', icono: 'fabrica', tono: 'is-ember',
-          valor: DB.fmt.n(lineaBase, 0), unidad: 'kg CO₂e',
-          pie: 'Emisión de referencia sin las acciones registradas' })}
-        ${UI.readout({ etiqueta: 'Reducción sobre la línea base', icono: 'bajando', tono: 'is-accent',
+        ${UI.readout({ etiqueta: 'CO₂ que no soltaste', icono: 'globo',
+          valor: DB.fmt.n(total, 1), unidad: 'kg',
+          pie: `Lo mismo que capturan ${DB.fmt.n(total / 21, 1)} árboles en todo un año` })}
+        ${UI.readout({ etiqueta: 'Lo que habrías soltado', icono: 'fabrica', tono: 'is-ember',
+          valor: DB.fmt.n(lineaBase, 0), unidad: 'kg',
+          pie: 'Si no hubieras hecho ninguna de estas acciones' })}
+        ${UI.readout({ etiqueta: 'Lo que te ahorraste', icono: 'bajando', tono: 'is-accent',
           valor: '18,0', unidad: '%',
-          pie: 'Proporción del total de referencia que se evitó' })}
+          pie: 'De todo eso, esta parte no llegó a pasar' })}
       </section>
 
       <section class="section">
         <div class="panel">
           <div class="panel-head">
-            ${Icon.get('progreso', 18)}<h3>Distribución mensual por categoría</h3>
-            <span class="tag">kg CO₂e</span>
+            ${Icon.get('progreso', 18)}<h3>Mes a mes, y de dónde vino cada kilo</h3>
+            <span class="tag">en kg de CO₂</span>
           </div>
           <div class="panel-body">
             <div class="chart-box is-tall"><canvas id="g-mensual"
@@ -90,7 +92,7 @@ Screens.reporte = {
       </section>
 
       <section class="section">
-        <div class="section-head"><h2>Detalle del cálculo</h2></div>
+        <div class="section-head"><h2>La cuenta, categoría por categoría</h2></div>
         <div class="table-wrap">
           <table class="data">
             <caption class="sr-only">Detalle del cálculo de emisiones evitadas por categoría</caption>
@@ -98,10 +100,10 @@ Screens.reporte = {
               <tr>
                 <th scope="col">Categoría</th>
                 <th scope="col">Clase del modelo</th>
-                <th scope="col" class="align-r">Registros</th>
-                <th scope="col" class="align-r">Cantidad acumulada</th>
-                <th scope="col" class="align-r">CO₂e evitado</th>
-                <th scope="col" class="align-r">Participación</th>
+                <th scope="col" class="align-r">Acciones</th>
+                <th scope="col" class="align-r">Cuánto en total</th>
+                <th scope="col" class="align-r">CO₂ evitado</th>
+                <th scope="col" class="align-r">Qué tanto pesa</th>
               </tr>
             </thead>
             <tbody>
@@ -119,7 +121,7 @@ Screens.reporte = {
             </tbody>
             <tfoot>
               <tr style="background:var(--paper-sunken);font-weight:600">
-                <td colspan="4"><b>Total del periodo</b></td>
+                <td colspan="4"><b>Todo junto</b></td>
                 <td class="align-r mono"><b>${DB.fmt.n(total, 1)} kg</b></td>
                 <td class="align-r mono">100,0 %</td>
               </tr>
@@ -130,28 +132,27 @@ Screens.reporte = {
 
       <section class="section grid grid-2">
         <div class="panel">
-          <div class="panel-head">${Icon.get('info', 18)}<h3>Factores de emisión aplicados</h3></div>
+          <div class="panel-head">${Icon.get('info', 18)}<h3>Cuánto ahorra cada cosa</h3></div>
           <div class="panel-body">
             <dl class="dl">
               ${DB.CAT_LIST.map(c => `
                 <dt>${c.nombre}</dt>
-                <dd>${DB.fmt.n(Math.min(...c.tipos.map(t => t.factor)), 3)} – ${DB.fmt.n(Math.max(...c.tipos.map(t => t.factor)), 3)} kg CO₂e / ${c.unidad}</dd>`).join('')}
+                <dd>${DB.fmt.n(Math.min(...c.tipos.map(t => t.factor)), 3)} – ${DB.fmt.n(Math.max(...c.tipos.map(t => t.factor)), 3)} kg de CO₂ por cada ${c.unidad}</dd>`).join('')}
             </dl>
           </div>
           <div class="panel-foot">
-            El factor eléctrico usa 0,035 kg CO₂e por kWh, acorde con una matriz casi totalmente renovable.
+            Estos son los números por los que se multiplica lo que registrás. El de electricidad es bajo
+            (0,035 por kWh) porque casi toda la del país ya es renovable.
           </div>
         </div>
 
         <div class="panel">
-          <div class="panel-head">${Icon.get('alerta', 18)}<h3>Nota metodológica</h3></div>
+          <div class="panel-head">${Icon.get('alerta', 18)}<h3>Letra chica: cómo se hizo esta cuenta</h3></div>
           <div class="panel-body">
-            <p class="text-sm">El cálculo aplica un factor de emisión fijo por unidad declarada y asume que
-            la acción sustituye una alternativa convencional: por ejemplo, un kilómetro en autobús sustituye
-            un kilómetro en vehículo particular de gasolina.</p>
-            <p class="text-sm">Las cantidades las declara la persona usuaria y no se verifican con una fuente
-            externa, por lo que el resultado es una estimación de seguimiento personal y no un inventario
-            certificado de gases de efecto invernadero.</p>
+            <p class="text-sm">Cada acción se multiplica por un número fijo, y se da por hecho que
+            reemplazaste la opción de siempre: que ese kilómetro en bus lo habrías hecho en carro de gasolina.</p>
+            <p class="text-sm">Las cantidades las escribís vos y nadie las verifica, así que esto sirve para
+            seguirte la pista a vos mismo, no como un certificado oficial de nada.</p>
             <p class="text-sm" style="margin-bottom:0">Los valores de este prototipo son de referencia
             académica y no provienen de un inventario oficial.</p>
           </div>

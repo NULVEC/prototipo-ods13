@@ -103,7 +103,7 @@ Screens.accion = {
 
             <div class="calc-formula">
               <div class="row"><span>Cantidad</span><b id="f-cant">—</b></div>
-              <div class="row"><span>Factor de emisión</span><b id="f-factor">—</b></div>
+              <div class="row"><span>Cuánto ahorra cada unidad${UI.ayuda('factor')}</span><b id="f-factor">—</b></div>
               <div class="row is-total"><span>CO₂ evitado</span><b id="f-total">0,00 kg</b></div>
             </div>
 
@@ -165,7 +165,7 @@ Screens.accion = {
       const valido = !isNaN(q) && q > 0;
       const co2 = valido ? q * t.factor : 0;
 
-      factorTxt.textContent = `${DB.fmt.n(t.factor, 3)} kg de CO₂e por cada ${c.unidad}.`;
+      factorTxt.textContent = `${DB.fmt.n(t.factor, 3)} kg de CO₂ por cada ${c.unidad}.`;
       document.getElementById('f-cant').textContent = valido ? `${DB.fmt.n(q, 2)} ${c.unidad}` : '—';
       document.getElementById('f-factor').textContent = `× ${DB.fmt.n(t.factor, 3)}`;
       document.getElementById('f-total').textContent = `${DB.fmt.n(co2, 2)} kg`;

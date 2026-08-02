@@ -481,3 +481,80 @@ body.presentando .content { padding-bottom: 96px; }
   .presenta-proximo, .presenta-puntos { display: none; }
   .presenta-barra { bottom: var(--s-3); gap: var(--s-2); }
 }
+
+/* ==========================================================================
+   GLOSARIO EN LÍNEA
+   El botón de "¿qué es esto?" que acompaña a un término técnico. Tiene que
+   verse disponible sin robarle atención a la palabra que explica: por eso es
+   un círculo pequeño y apagado que solo se enciende al pasar por encima.
+   Ver `UI.ayuda()` en ui.js.
+   ========================================================================== */
+
+.con-ayuda { display: inline-flex; align-items: center; gap: 5px; }
+
+.ayuda {
+  flex: none;
+  display: inline-grid; place-items: center;
+  width: 15px; height: 15px;
+  padding: 0; border: 0; border-radius: 50%;
+  background: var(--line); color: var(--ink-2);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 600;
+  line-height: 1; cursor: help;
+  vertical-align: middle;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.ayuda:hover { background: var(--azul); color: #fff; }
+.ayuda:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* Sobre los paneles oscuros el botón se invierte para no desaparecer. */
+.panel-dark .ayuda, .home-head .ayuda, .calc .ayuda, .escena-datos .ayuda {
+  background: rgba(194, 211, 203, .22); color: #eef2ee;
+}
+.panel-dark .ayuda:hover, .home-head .ayuda:hover,
+.calc .ayuda:hover, .escena-datos .ayuda:hover { background: var(--azul-bright); color: #0c2921; }
+
+/* Las dos capas de la explicación: la frase de un vistazo y el desarrollo. */
+.glos-corto {
+  font-size: var(--t-body); font-weight: 600; color: var(--ink);
+  margin: 0 0 var(--s-4); padding-left: var(--s-4);
+  border-left: 3px solid var(--azul);
+}
+.glos-largo { font-size: var(--t-sm); color: var(--ink-2); line-height: 1.65; margin: 0; }
+
+/* ==========================================================================
+   EXPLICADOR "¿CÓMO FUNCIONA?"
+   Los cuatro pasos que se abren solos la primera vez. Ver `explicador.js`.
+   ========================================================================== */
+
+.explica { text-align: center; padding: var(--s-2) 0; }
+.explica-sello {
+  display: inline-grid; place-items: center;
+  width: 62px; height: 62px; margin-bottom: var(--s-4);
+  border-radius: 50%;
+  background: var(--pine-tint); color: var(--pine);
+  border: 1px solid var(--pine-mid);
+}
+.explica h2 { margin: var(--s-2) 0 var(--s-3); font-size: var(--t-h2); }
+.explica-texto {
+  font-size: var(--t-body); color: var(--ink-2); line-height: 1.65;
+  margin: 0 auto var(--s-5); max-width: 46ch;
+}
+.explica-texto b { color: var(--ink); }
+
+.explica-pie {
+  display: inline-flex; align-items: flex-start; gap: var(--s-2);
+  text-align: left;
+  font-family: var(--font-mono); font-size: var(--t-sm);
+  color: var(--ink-3); background: var(--paper-sunken);
+  padding: var(--s-3) var(--s-4); border-radius: var(--r-sm);
+  margin: 0 0 var(--s-5); max-width: 44ch;
+}
+.explica-pie svg { flex: none; margin-top: 2px; color: var(--azul); }
+
+.explica-puntos { display: flex; justify-content: center; gap: 6px; }
+.explica-puntos i {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--line-strong);
+  transition: background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.explica-puntos i.is-aqui { background: var(--azul); transform: scale(1.45); }

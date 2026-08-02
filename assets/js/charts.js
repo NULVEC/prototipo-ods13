@@ -109,7 +109,7 @@ const Charts = (() => {
           tooltip: {
             callbacks: {
               title: c => 'Semana ' + c[0].label,
-              label: c => DB.fmt.co2(c.parsed.y) + ' kg CO₂e evitados'
+              label: c => DB.fmt.co2(c.parsed.y) + ' kg CO₂ evitados'
             }
           }
         }
@@ -138,7 +138,7 @@ const Charts = (() => {
         cutout: '62%',
         plugins: {
           tooltip: {
-            callbacks: { label: c => `${DB.fmt.co2(c.parsed)} kg CO₂e` }
+            callbacks: { label: c => `${DB.fmt.co2(c.parsed)} kg CO₂` }
           }
         }
       }
@@ -172,7 +172,7 @@ const Charts = (() => {
         responsive: true, maintainAspectRatio: false,
         scales: ejes({ yTicks: { callback: v => v + ' kg' } }),
         plugins: {
-          tooltip: { callbacks: { label: c => `${DB.fmt.co2(c.parsed.y)} kg CO₂e` } }
+          tooltip: { callbacks: { label: c => `${DB.fmt.co2(c.parsed.y)} kg CO₂` } }
         }
       }
     });
@@ -238,7 +238,7 @@ const Charts = (() => {
           y: { grid: { display: false }, border: { color: PALETA.linea } }
         },
         plugins: {
-          tooltip: { callbacks: { label: c => `${DB.fmt.co2(c.parsed.x)} kg CO₂e evitados` } }
+          tooltip: { callbacks: { label: c => `${DB.fmt.co2(c.parsed.x)} kg CO₂ evitados` } }
         }
       }
     });

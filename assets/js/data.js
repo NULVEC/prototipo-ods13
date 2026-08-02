@@ -179,7 +179,7 @@ const DB = (() => {
     { id: 'INS-02', nombre: 'Semana constante', icono: 'calendario', tono: 'pine',
       criterio: 'Registrar acciones siete días seguidos.', meta: 7, campo: 'racha' },
     { id: 'INS-03', nombre: 'Cien kilos', icono: 'meta', tono: 'ochre',
-      criterio: 'Evitar 100 kg de CO₂e acumulados.', meta: 100, campo: 'co2' },
+      criterio: 'Evitar 100 kg de CO₂ acumulados.', meta: 100, campo: 'co2' },
     { id: 'INS-04', nombre: 'Ruta limpia', icono: 'transporte', tono: 'azul',
       criterio: 'Acumular 150 km en transporte bajo en carbono.', meta: 150, campo: 'km' },
     { id: 'INS-05', nombre: 'Separador', icono: 'reciclaje', tono: 'pine',
@@ -187,11 +187,11 @@ const DB = (() => {
     { id: 'INS-06', nombre: 'Mes completo', icono: 'reloj', tono: 'azul',
       criterio: 'Registrar acciones treinta días seguidos.', meta: 30, campo: 'racha' },
     { id: 'INS-07', nombre: 'Media tonelada', icono: 'globo', tono: 'ochre',
-      criterio: 'Evitar 500 kg de CO₂e acumulados.', meta: 500, campo: 'co2' },
+      criterio: 'Evitar 500 kg de CO₂ acumulados.', meta: 500, campo: 'co2' },
     { id: 'INS-08', nombre: 'Bandera azul', icono: 'escudo', tono: 'azul',
       criterio: 'Doce semanas seguidas con al menos tres acciones.', meta: 12, campo: 'semanas' },
     { id: 'INS-09', nombre: 'Guardabosques', icono: 'arboles', tono: 'pine',
-      criterio: 'Evitar 1 000 kg de CO₂e acumulados.', meta: 1000, campo: 'co2' }
+      criterio: 'Evitar 1 000 kg de CO₂ acumulados.', meta: 1000, campo: 'co2' }
   ];
 
   /* ------------------------------------------------------------------ */
@@ -224,8 +224,99 @@ const DB = (() => {
     }
   ];
 
+  /* ------------------------------------------------------------------ */
+  /* Glosario                                                            */
+  /*                                                                     */
+  /* Una aplicación ambiental está llena de palabras que solo entiende   */
+  /* quien ya sabía del tema: "factor de emisión", "CO₂e", "percentil".  */
+  /* Si hay que saber el vocabulario para entender la pantalla, la       */
+  /* pantalla no está informando a nadie.                                */
+  /*                                                                     */
+  /* Cada término se explica en dos niveles: `corto` es la frase que se  */
+  /* lee de pasada, `largo` es para quien quiso saber más. Ninguno de    */
+  /* los dos usa otra palabra que también haya que buscar.               */
+  /* ------------------------------------------------------------------ */
+  const glosario = {
+    co2: {
+      termino: 'CO₂',
+      corto: 'El gas que más calienta el planeta.',
+      largo: `CO₂ es dióxido de carbono, un gas que sale sobre todo de quemar
+              combustibles: gasolina, diésel, gas. El problema no es el gas en sí
+              —siempre ha existido— sino la cantidad: atrapa calor en la atmósfera
+              y por eso el planeta se está calentando.
+              Se mide en kilos, igual que cualquier otra cosa que pese.`
+    },
+    evitado: {
+      termino: 'CO₂ evitado',
+      corto: 'El gas que NO se produjo porque hiciste algo distinto.',
+      largo: `Cuando te vas en bus en vez de en carro, esos kilos de CO₂ que
+              habría soltado el carro nunca salieron. Eso es CO₂ evitado: no es
+              algo que limpiaste, es algo que no llegó a pasar.
+              Por eso la app suma en positivo: cada registro es una emisión que
+              no ocurrió.`
+    },
+    factor: {
+      termino: 'Factor de emisión',
+      corto: 'Cuánto CO₂ ahorra cada unidad de lo que hiciste.',
+      largo: `Es el número por el que se multiplica lo que registraste.
+              Reciclar un kilo de aluminio evita 8,14 kg de CO₂, así que su factor
+              es 8,14. Un kilómetro en bus evita 0,103 kg, así que su factor es
+              0,103.
+              La cuenta siempre es la misma: lo que hiciste × su factor = CO₂ evitado.`
+    },
+    huella: {
+      termino: 'Huella de carbono',
+      corto: 'Todo el CO₂ que produce una persona con su forma de vivir.',
+      largo: `Es la suma del CO₂ que generás con lo que hacés a diario:
+              transportarte, comer, usar electricidad, comprar cosas.
+              Esta app no mide tu huella completa, sino lo que le vas restando.`
+    },
+    racha: {
+      termino: 'Racha',
+      corto: 'Días seguidos en que registraste al menos una acción.',
+      largo: `Se cuenta hacia atrás desde hoy. Si un día no registrás nada,
+              la racha vuelve a cero.
+              No mide cuánto hiciste, mide qué tan constante fuiste — que para
+              formar un hábito importa más.`
+    },
+    promedio: {
+      termino: 'Promedio diario',
+      corto: 'Cuánto te sale por día si repartís el total entre todos los días.',
+      largo: `Se suma todo el CO₂ del periodo y se divide entre la cantidad de
+              días, incluidos aquellos en que no registraste nada.
+              Sirve para comparar periodos de distinto largo: un mes bueno y una
+              semana buena no se pueden comparar por el total, pero sí por el
+              promedio.`
+    },
+    mejorQue: {
+      termino: 'Le ganás al X %',
+      corto: 'De cada 100 participantes, a cuántos les llevás ventaja.',
+      largo: `Si dice que le ganás al 70 %, quiere decir que de cada 100
+              participantes hay 70 con menos CO₂ evitado que vos y 30 con más.
+              Es otra forma de leer tu puesto que no depende de cuánta gente haya
+              en total.`
+    },
+    ods13: {
+      termino: 'ODS 13',
+      corto: 'La meta mundial de actuar contra el cambio climático.',
+      largo: `Los Objetivos de Desarrollo Sostenible son 17 metas que casi todos
+              los países del mundo acordaron en 2015 para cumplir al 2030.
+              El número 13 es "Acción por el clima".
+              Este sistema existe para ese objetivo: que una persona pueda ver y
+              medir lo que aporta.`
+    },
+    anonimo: {
+      termino: 'Alias',
+      corto: 'El nombre falso con el que aparecés ante los demás.',
+      largo: `En la comparación con otras personas nunca se muestra tu nombre
+              ni tu correo: solo un alias que el sistema arma con una especie
+              costarricense y un número, como "Yigüirro-418".
+              Los demás ven ese alias, tu provincia y tu total. Nada más.`
+    }
+  };
+
   const consejos = [
-    { titulo: 'Separá el aluminio aparte', texto: 'Reciclar un kilo de aluminio evita alrededor de 8 kg de CO₂e: es, por peso, el material con mayor retorno ambiental de todos los que se recolectan.' },
+    { titulo: 'Separá el aluminio aparte', texto: 'Reciclar un kilo de aluminio evita alrededor de 8 kg de CO₂: es, por peso, el material con mayor retorno ambiental de todos los que se recolectan.' },
     { titulo: 'Los viajes cortos pesan más', texto: 'Un motor frío consume hasta un 30 % más en los primeros kilómetros. Sustituir un trayecto de 3 km por caminata rinde más de lo que sugiere la distancia.' },
     { titulo: 'Revisá el medidor de agua', texto: 'Cerrá todas las llaves y quedate viendo el medidor diez minutos. Si avanza, hay una fuga: arreglarla puede ahorrar varios metros cúbicos al mes.' },
     { titulo: 'El compost cierra el ciclo', texto: 'Los residuos orgánicos en relleno sanitario generan metano. Compostarlos en casa evita esa emisión y produce abono.' }
@@ -270,7 +361,7 @@ const DB = (() => {
         texto: 'Acumuló 150 km en medios de transporte bajos en carbono desde marzo.' },
       { id: 'N-3', tipo: 'resumen', origen: 'sistema', leida: false, fecha: h(2, '07:00'),
         titulo: 'Resumen semanal disponible',
-        texto: 'La semana pasada evitó 9,4 kg de CO₂e con 11 registros. Es un 18 % más que la semana anterior.' },
+        texto: 'La semana pasada evitó 9,4 kg de CO₂ con 11 registros. Es un 18 % más que la semana anterior.' },
       { id: 'N-4', tipo: 'recordatorio', origen: 'sistema', leida: true, fecha: h(3, '19:00'),
         titulo: 'Faltan 8 días para cerrar el mes',
         texto: 'Va en 31,2 kg de 45 kg de su meta mensual. Necesita cerca de 1,7 kg diarios para alcanzarla.' },
@@ -279,7 +370,7 @@ const DB = (() => {
         texto: 'El registro RA-1043 dice 148 kg de papel reciclado en un solo día. Confirmá la cantidad o corregila.' },
       { id: 'N-6', tipo: 'logro', origen: 'sistema', leida: true, fecha: h(9, '16:45'),
         titulo: 'Insignia obtenida: Cien kilos',
-        texto: 'Superó los 100 kg de CO₂e evitados desde que creó la cuenta.' },
+        texto: 'Superó los 100 kg de CO₂ evitados desde que creó la cuenta.' },
       { id: 'N-7', tipo: 'resumen', origen: 'sistema', leida: true, fecha: h(14, '07:00'),
         titulo: 'Nuevo contenido en información ambiental',
         texto: 'Se agregó la ficha sobre el peso del transporte en las emisiones nacionales.' }
@@ -689,7 +780,7 @@ const DB = (() => {
   return {
     CATEGORIAS, CAT_LIST, tipoDe,
     state, persistir,
-    insignias, articulos, consejos,
+    insignias, articulos, consejos, glosario,
     registrosOrdenados, enUltimosDias, sumaCO2,
     serieDiaria, serieSemanal, serieMensual, porCategoria,
     racha, metricas, logros, tablaComunidad,

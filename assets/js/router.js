@@ -7,32 +7,34 @@
 
 const Router = (() => {
 
-  /* Mapa de rutas. `uc` se muestra en la barra superior para que el
-     prototipo sea trazable contra la tabla de casos de uso del Avance 3. */
+  /* Mapa de rutas. El título es el que lee la persona, en palabras normales;
+     `uc` se muestra al lado en la barra superior para que el prototipo siga
+     siendo trazable contra la tabla de casos de uso del Avance 3. Los dos
+     conviven: el número no estorba a quien no lo necesita. */
   const RUTAS = {
-    '/registro':      { uc: 'UC1', titulo: 'Crear cuenta',            publico: true,  pantalla: 'registro' },
-    '/acceso':        { uc: 'UC2', titulo: 'Iniciar sesión',          publico: true,  pantalla: 'acceso' },
-    '/inicio':        { uc: 'UC3', titulo: 'Inicio',                  pantalla: 'inicio' },
-    '/nueva-accion':  { uc: 'UC4', titulo: 'Registrar acción',        pantalla: 'accion' },
-    '/progreso':      { uc: 'UC5', titulo: 'Progreso personal',       pantalla: 'progreso' },
-    '/notificaciones':{ uc: 'UC6', titulo: 'Notificaciones',          pantalla: 'notificaciones' },
-    '/insignias':     { uc: 'UC7', titulo: 'Insignias y logros',      pantalla: 'insignias' },
-    '/comunidad':     { uc: 'UC8', titulo: 'Comparativa comunitaria', pantalla: 'comunidad' },
-    '/reporte':       { uc: 'UC9', titulo: 'Reporte de emisiones',    pantalla: 'reporte' },
-    '/perfil':        { uc: 'UC10',titulo: 'Perfil',                  pantalla: 'perfil' }
+    '/registro':      { uc: 'UC1',  titulo: 'Crear cuenta',     publico: true, pantalla: 'registro' },
+    '/acceso':        { uc: 'UC2',  titulo: 'Iniciar sesión',   publico: true, pantalla: 'acceso' },
+    '/inicio':        { uc: 'UC3',  titulo: 'Inicio',           pantalla: 'inicio' },
+    '/nueva-accion':  { uc: 'UC4',  titulo: 'Registrar acción', pantalla: 'accion' },
+    '/progreso':      { uc: 'UC5',  titulo: 'Mi progreso',      pantalla: 'progreso' },
+    '/notificaciones':{ uc: 'UC6',  titulo: 'Notificaciones',   pantalla: 'notificaciones' },
+    '/insignias':     { uc: 'UC7',  titulo: 'Mis insignias',    pantalla: 'insignias' },
+    '/comunidad':     { uc: 'UC8',  titulo: 'Comunidad',        pantalla: 'comunidad' },
+    '/reporte':       { uc: 'UC9',  titulo: 'Mi reporte',       pantalla: 'reporte' },
+    '/perfil':        { uc: 'UC10', titulo: 'Perfil',           pantalla: 'perfil' }
   };
 
   /* Navegación lateral, agrupada por intención y no por número de caso. */
   const NAV = [
     { grupo: 'Seguimiento', items: [
       { ruta: '/inicio',        icono: 'inicio',    texto: 'Inicio' },
-      { ruta: '/nueva-accion',  icono: 'accion',    texto: 'Registrar acción' },
+      { ruta: '/nueva-accion',  icono: 'accion',    texto: 'Registrar algo' },
       { ruta: '/progreso',      icono: 'progreso',  texto: 'Mi progreso' }
     ]},
     { grupo: 'Resultados', items: [
       { ruta: '/insignias',     icono: 'insignia',  texto: 'Insignias' },
       { ruta: '/comunidad',     icono: 'comunidad', texto: 'Comunidad' },
-      { ruta: '/reporte',       icono: 'reporte',   texto: 'Reporte de emisiones' }
+      { ruta: '/reporte',       icono: 'reporte',   texto: 'Mi reporte' }
     ]},
     { grupo: 'Cuenta', items: [
       { ruta: '/notificaciones',icono: 'campana',   texto: 'Notificaciones', contador: true },
@@ -121,6 +123,9 @@ const Router = (() => {
             <h1>${cfg.titulo}</h1>
             <span class="uc-tag">${cfg.uc}</span>
             <div class="topbar-actions">
+              <button class="btn btn-sm btn-ghost" type="button" data-como-funciona>
+                ${Icon.get('info', 16)}<span>¿Cómo funciona?</span>
+              </button>
               <a class="btn btn-icon" href="#/notificaciones" aria-label="Notificaciones${sinLeer ? `, ${sinLeer} sin leer` : ''}">
                 ${Icon.get('campana', 19)}${sinLeer ? '<span class="dot"></span>' : ''}
               </a>
@@ -177,6 +182,7 @@ const Router = (() => {
   /* Comportamientos comunes a cualquier pantalla ya montada. */
   function conectarGlobales() {
     UI.$$('[data-ir]').forEach(b => b.addEventListener('click', () => ir(b.dataset.ir)));
+    UI.$$('[data-como-funciona]').forEach(b => b.addEventListener('click', () => Explicador.abrir()));
     UI.$$('[data-abrir-nav]').forEach(b => b.addEventListener('click', () => {
       document.body.classList.add('nav-open');
       document.querySelector('.sidebar .nav-item')?.focus();
@@ -212,6 +218,7 @@ const Router = (() => {
     });
     Presentacion.iniciar();
     resolver();
+    Explicador.siEsLaPrimeraVez();
   }
 
   return { RUTAS, NAV, ir, iniciar, resolver };

@@ -42,7 +42,7 @@ Screens.comunidad = {
       <section class="section grid grid-4">
         ${UI.readout({ etiqueta: 'Tu puesto', icono: 'comunidad', tono: 'is-accent',
           valor: '#' + (yo?.pos ?? '—'), unidad: `/ ${completa.length}`,
-          pie: `Le ganás al ${percentil} % de la gente` })}
+          pie: `Le ganás al ${percentil} % de la gente${UI.ayuda('mejorQue')}` })}
         ${UI.readout({ etiqueta: 'Tu CO₂ evitado', icono: 'globo',
           valor: `<span data-contar="${(yo?.co2 ?? 0).toFixed(1)}" data-dec="1">0,0</span>`, unidad: 'kg',
           pie: `${yo?.acciones ?? 0} acciones registradas` })}
@@ -94,7 +94,7 @@ Screens.comunidad = {
           <div class="rank-me">
             <span class="pos">#${yo?.pos ?? '—'}</span>
             <div class="txt">
-              <b>${UI.esc(alias)}</b>
+              <b>${UI.esc(alias)}${UI.ayuda('anonimo')}</b>
               <p>Así te ven los demás. Nadie ve tu nombre ni tu correo.</p>
             </div>
           </div>

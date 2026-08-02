@@ -48,7 +48,7 @@ Screens.registro = {
           texto: 'Cree una cuenta para registrar sus acciones sostenibles y ver, en kilogramos, el CO₂ que deja de emitir cada semana.',
           puntos: [
             { icono: 'reciclaje',  texto: 'Registrá reciclaje, transporte, energía y agua' },
-            { icono: 'progreso',   texto: 'Vea el cálculo del CO₂e con la fórmula a la vista' },
+            { icono: 'progreso',   texto: 'Vea el cálculo del CO₂ con la fórmula a la vista' },
             { icono: 'escudo',     texto: 'Compare su avance sin exponer su identidad' }
           ],
           etiqueta: 'Meta nacional de descarbonización',

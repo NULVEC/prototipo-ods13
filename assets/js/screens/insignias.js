@@ -20,21 +20,21 @@ Screens.insignias = {
                    : this.filtro === 'pendientes' ? pendientes
                    : [...obtenidas, ...pendientes];
 
-    const unidad = campo => ({ co2: 'kg CO₂e', km: 'km', racha: 'días',
+    const unidad = campo => ({ co2: 'kg CO₂', km: 'km', racha: 'días',
                                registros: 'registros', reciclajes: 'registros',
                                semanas: 'semanas' }[campo] || '');
 
     return `
       <section class="section grid grid-3">
-        ${UI.readout({ etiqueta: 'Insignias obtenidas', icono: 'insignia', tono: 'is-ochre',
+        ${UI.readout({ etiqueta: 'Insignias que ya tenés', icono: 'insignia', tono: 'is-ochre',
           valor: obtenidas.length, unidad: `/ ${logros.length}`,
-          pie: `${Math.round(obtenidas.length / logros.length * 100)} % del catálogo` })}
-        ${UI.readout({ etiqueta: 'Próxima insignia', icono: 'meta', tono: 'is-accent',
+          pie: `${Math.round(obtenidas.length / logros.length * 100)} % de todas` })}
+        ${UI.readout({ etiqueta: 'La que sigue', icono: 'meta', tono: 'is-accent',
           valor: proxima ? proxima.pct + ' %' : '100 %',
-          pie: proxima ? UI.esc(proxima.nombre) : 'Catálogo completo' })}
-        ${UI.readout({ etiqueta: 'Racha actual', icono: 'llama',
+          pie: proxima ? UI.esc(proxima.nombre) : '¡Las tenés todas!' })}
+        ${UI.readout({ etiqueta: 'Tu racha', icono: 'llama',
           valor: DB.racha(), unidad: 'días',
-          pie: 'Días seguidos con al menos un registro' })}
+          pie: 'Días seguidos registrando algo' })}
       </section>
 
       ${proxima ? `
@@ -43,7 +43,7 @@ Screens.insignias = {
           <div class="panel-body" style="display:flex;gap:var(--s-6);align-items:center;flex-wrap:wrap">
             <span class="seal is-${proxima.tono}" style="flex:none">${Icon.get(proxima.icono, 30, 1.8)}</span>
             <div style="flex:1;min-width:240px">
-              <span class="label-micro" style="color:rgba(194,211,203,.6)">Le falta poco</span>
+              <span class="label-micro" style="color:rgba(194,211,203,.6)">Ya casi la tenés</span>
               <h2 style="margin:var(--s-2) 0 var(--s-2)">${UI.esc(proxima.nombre)}</h2>
               <p class="text-sm" style="color:var(--pine-on-dark);margin-bottom:var(--s-4)">${UI.esc(proxima.criterio)}</p>
               <div class="bar is-azul" style="--p:${proxima.pct}%" role="progressbar"
@@ -61,7 +61,7 @@ Screens.insignias = {
 
       <section class="section">
         <div class="section-head">
-          <h2>Catálogo de insignias</h2>
+          <h2>Todas las insignias</h2>
           <div class="section-aside" id="filtros-ins">
             <button class="chip" type="button" data-f="todas" aria-pressed="${this.filtro === 'todas'}">Todas</button>
             <button class="chip" type="button" data-f="obtenidas" aria-pressed="${this.filtro === 'obtenidas'}">Obtenidas (${obtenidas.length})</button>

@@ -236,19 +236,19 @@ const UI = (() => {
       return `<button type="button" class="ribbon-bar ${cls}"
         style="--h:${h}%;--d:${i * 5}ms"
         aria-label="${DB.fmt.fecha(d.fecha)}: ${DB.fmt.co2(d.co2)} kg de CO2e evitados"
-        title="${DB.fmt.fechaCorta(d.fecha)} · ${DB.fmt.co2(d.co2)} kg CO₂e"></button>`;
+        title="${DB.fmt.fechaCorta(d.fecha)} · ${DB.fmt.co2(d.co2)} kg CO₂"></button>`;
     }).join('');
 
     return `
-      <section class="ribbon" aria-label="Cinta de carbono de los últimos ${dias} días">
+      <section class="ribbon" aria-label="Una barra por cada uno de los últimos ${dias} días. Cuanto más alta, más CO2 evitaste ese día.">
         <div class="ribbon-head">
-          <span class="label-micro">Cinta de carbono · ${dias} días</span>
-          <span class="ribbon-read">Total <b>${DB.fmt.n(total, 1)} kg</b> &nbsp;·&nbsp; promedio diario <b>${DB.fmt.n(prom, 2)} kg</b></span>
+          <span class="label-micro">Tus últimos ${dias} días · una barra por día</span>
+          <span class="ribbon-read">En total <b>${DB.fmt.n(total, 1)} kg</b> &nbsp;·&nbsp; unos <b>${DB.fmt.n(prom, 2)} kg</b> por día</span>
         </div>
         <div class="ribbon-track" style="--avg:${Math.min(96, Math.round(prom / max * 100))}%">${barras}</div>
         <div class="ribbon-axis">
           <span>${DB.fmt.fechaCorta(serie[0].fecha)}</span>
-          <span>línea punteada = promedio del periodo</span>
+          <span>entre más alta la barra, mejor fue ese día &nbsp;·&nbsp; la línea punteada es tu promedio</span>
           <span>hoy</span>
         </div>
       </section>`;
@@ -258,11 +258,19 @@ const UI = (() => {
      Bloques de contenido repetidos
      ================================================================== */
 
-  /** Lectura destacada (KPI del instrumento). */
+  /**
+   * Lectura destacada (KPI del instrumento).
+   *
+   * `etiqueta`, `valor` y `pie` se insertan como HTML y no se escapan: las
+   * tres las escribe una pantalla, nunca vienen de la base ni de un
+   * formulario, y necesitan admitir marcado — un botón del glosario en la
+   * etiqueta, una variación con signo en el pie. Lo que sí venga de datos se
+   * escapa en el sitio donde se arma, con `UI.esc`.
+   */
   function readout({ etiqueta, valor, unidad = '', pie = '', tono = '', icono = '' }) {
     return `
       <article class="readout ${tono}">
-        <p class="label-micro">${icono ? Icon.get(icono, 13) : ''}${esc(etiqueta)}</p>
+        <p class="label-micro">${icono ? Icon.get(icono, 13) : ''}${etiqueta}</p>
         <p class="value">${valor}${unidad ? `<span class="unit">${esc(unidad)}</span>` : ''}</p>
         ${pie ? `<p class="foot">${pie}</p>` : ''}
       </article>`;
@@ -273,6 +281,53 @@ const UI = (() => {
     return `<div aria-hidden="true">${'<div class="skeleton sk-line"></div>'.repeat(n)}</div>`;
   }
 
+  /* ==================================================================
+     GLOSARIO EN LÍNEA
+
+     Ninguna palabra técnica debería obligar a salirse de la pantalla
+     para entenderla. `ayuda('co2')` deja un botón discreto al lado del
+     término; al pulsarlo se abre la explicación completa.
+
+     Se conecta una sola vez, sobre el documento, en lugar de por botón:
+     las pantallas se redibujan enteras a cada rato y así los botones
+     nuevos funcionan sin tener que volver a enlazarlos.
+     ================================================================== */
+
+  /** Botón de "¿qué es esto?" para un término del glosario. */
+  function ayuda(clave) {
+    const g = DB.glosario[clave];
+    if (!g) return '';
+    return `<button class="ayuda" type="button" data-ayuda="${clave}"
+              aria-label="Qué significa ${esc(g.termino)}"
+              title="¿Qué significa ${esc(g.termino)}?">?</button>`;
+  }
+
+  /** El término escrito, con su botón de ayuda pegado. */
+  function termino(clave, texto) {
+    const g = DB.glosario[clave];
+    if (!g) return esc(texto || '');
+    return `<span class="con-ayuda">${esc(texto || g.termino)}${ayuda(clave)}</span>`;
+  }
+
+  function abrirGlosario(clave) {
+    const g = DB.glosario[clave];
+    if (!g) return;
+    modal({
+      titulo: g.termino,
+      cuerpo: `
+        <p class="glos-corto">${esc(g.corto)}</p>
+        <p class="glos-largo">${esc(g.largo.replace(/\s+/g, ' ').trim())}</p>`,
+      acciones: [{ texto: 'Entendido', clase: 'btn-primary' }],
+      ancho: 460
+    });
+  }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-ayuda]');
+    if (b) abrirGlosario(b.dataset.ayuda);
+  });
+
   return { $, $$, esc, toast, modal, cerrarModal, cargando, validar, validacionEnVivo,
-           marcar, fortaleza, conectarRevelar, cintaCarbono, readout, esqueleto };
+           marcar, fortaleza, conectarRevelar, cintaCarbono, readout, esqueleto,
+           ayuda, termino, abrirGlosario };
 })();

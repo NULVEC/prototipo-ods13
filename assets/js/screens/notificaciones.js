@@ -26,7 +26,7 @@ Screens.notificaciones = {
 
         <section>
           <div class="section-head">
-            <h2>Bandeja de notificaciones</h2>
+            <h2>Tus avisos</h2>
             <div class="section-aside" id="filtros-notif">
               <button class="chip" type="button" data-f="todas" aria-pressed="${this.filtro === 'todas'}">Todas</button>
               <button class="chip" type="button" data-f="sinleer" aria-pressed="${this.filtro === 'sinleer'}">Sin leer (${sinLeer})</button>
@@ -49,7 +49,7 @@ Screens.notificaciones = {
 
         <aside class="stack">
           <div class="panel">
-            <div class="panel-head">${Icon.get('ajustes', 18)}<h3>Preferencias de aviso</h3></div>
+            <div class="panel-head">${Icon.get('ajustes', 18)}<h3>¿De qué te avisamos?</h3></div>
             <form class="panel-body" id="form-notif">
               <div class="field">
                 <span class="field-label">Qué quiere recibir</span>
@@ -87,7 +87,7 @@ Screens.notificaciones = {
           </div>
 
           <div class="panel panel-dark">
-            <div class="panel-head">${Icon.get('recargar', 18)}<h3>Temporizador del sistema</h3></div>
+            <div class="panel-head">${Icon.get('recargar', 18)}<h3>Cómo llegan estos avisos</h3></div>
             <div class="panel-body">
               <p class="text-sm" style="color:var(--pine-on-dark)">
                 En la arquitectura propuesta, el backend envía estos avisos de forma automática
@@ -111,7 +111,7 @@ Screens.notificaciones = {
     if (!items.length) {
       return `<div class="empty">
         ${Icon.get('checkCirculo', 34, 1.5)}
-        <h3>No hay mensajes en este filtro</h3>
+        <h3>Nada por aquí</h3>
         <p>Cuando el temporizador envíe un aviso nuevo aparecerá aquí.</p>
       </div>`;
     }
@@ -165,7 +165,7 @@ Screens.notificaciones = {
         titulo: pendiente ? 'Recordatorio: hoy no hay registros' : 'Corte del día generado',
         texto: pendiente
           ? `Tu racha de ${DB.racha()} días se mantiene si registrás algo antes de la medianoche.`
-          : `Hoy lleva ${DB.fmt.co2(DB.sumaCO2(DB.enUltimosDias(1)))} kg de CO₂e evitados. Buen cierre de jornada.`
+          : `Hoy lleva ${DB.fmt.co2(DB.sumaCO2(DB.enUltimosDias(1)))} kg de CO₂ evitados. Buen cierre de jornada.`
       });
       UI.toast('Temporizador ejecutado', 'Se generó un aviso nuevo en la bandeja.', 'info');
       Router.resolver();

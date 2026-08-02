@@ -57,14 +57,14 @@ Screens.inicio = {
                aria-label="Avance de la meta mensual"><i></i></div>
         </div>
         <div class="streak ${racha >= 7 ? 'is-fuego' : ''}">
-          <span class="label-micro">${Icon.get('llama', 13)}Racha</span>
+          <span class="label-micro">${Icon.get('llama', 13)}Racha${UI.ayuda('racha')}</span>
           <span class="n">${racha}</span>
           <small>${racha === 1 ? 'día seguido registrando' : 'días seguidos registrando'}</small>
         </div>
       </section>
 
       <section class="section grid grid-4">
-        ${UI.readout({ etiqueta: 'CO₂ que no llegó al aire', icono: 'globo',
+        ${UI.readout({ etiqueta: `CO₂ que no llegó al aire${UI.ayuda('evitado')}`, icono: 'globo',
           valor: `<span data-contar="${total.toFixed(1)}" data-dec="1">0,0</span>`, unidad: 'kg',
           pie: `Desde el ${DB.fmt.fecha(u.desde)}` })}
         ${UI.readout({ etiqueta: 'Esta semana', icono: 'pulso', tono: 'is-accent',
@@ -75,7 +75,7 @@ Screens.inicio = {
         ${UI.readout({ etiqueta: 'Acciones registradas', icono: 'accion',
           valor: `<span data-contar="${DB.state.registros.length}" data-dec="0">0</span>`, unidad: '',
           pie: `${sem.length} en los últimos 7 días` })}
-        ${UI.readout({ etiqueta: 'Puesto en la comunidad', icono: 'comunidad', tono: 'is-ochre',
+        ${UI.readout({ etiqueta: `Puesto en la comunidad${UI.ayuda('mejorQue')}`, icono: 'comunidad', tono: 'is-ochre',
           valor: '#' + miPos, unidad: '',
           pie: `Entre ${tabla.length} participantes anónimos` })}
       </section>
@@ -126,7 +126,7 @@ Screens.inicio = {
           <div class="panel-head">
             ${Icon.get('bombilla', 18)}
             <h3>Lo que está pasando con el clima</h3>
-            <span class="tag">ODS 13</span>
+            <span class="tag">ODS 13${UI.ayuda('ods13')}</span>
           </div>
           <div class="panel-body" id="articulos">
             ${UI.esqueleto(3)}
@@ -279,7 +279,7 @@ Screens.inicio = {
     }
 
     datos.innerHTML = `
-      <p class="label-micro">CO₂ que no llegó al aire</p>
+      <p class="label-micro">CO₂ que no llegó al aire${UI.ayuda('co2')}</p>
       <p class="escena-cifra">${DB.fmt.n(escena.volumen, 1)}<span class="u">m³</span></p>
       <p class="escena-lado">Un cubo de <b>${DB.fmt.n(escena.lado, 2)} m</b> de lado</p>
 
