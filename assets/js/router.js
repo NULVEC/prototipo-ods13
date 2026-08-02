@@ -146,7 +146,8 @@ const Router = (() => {
 
     if (!cfg) { ir(DB.state.autenticado ? '/inicio' : '/acceso'); return; }
     if (!cfg.publico && !DB.state.autenticado) { ir('/acceso'); return; }
-    if (cfg.publico && DB.state.autenticado && ruta !== '/acceso') { /* se permite ver el registro */ }
+    // Con sesión abierta no tiene sentido volver a los formularios de acceso.
+    if (cfg.publico && DB.state.autenticado) { ir('/inicio'); return; }
 
     Charts.destruirTodo();
     document.body.classList.remove('nav-open');

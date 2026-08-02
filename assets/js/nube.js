@@ -193,20 +193,42 @@ async function sembrarEjemplo(uid, registros, notificaciones) {
   }
 }
 
+/* `createUserWithEmailAndPassword` abre la sesión antes de resolver, así que el
+   observador de sesión llega a ejecutarse mientras todavía se escriben el perfil
+   y el historial. Esta puerta se abre ANTES de crear la cuenta —si se abriera
+   después, el observador ya habría pasado— y el observador la espera antes de
+   descargar nada. Sin esto, el panel aparece vacío recién creada la cuenta. */
+let altaEnCurso = null;
+
 async function crearCuenta({ correo, clave, nombre, provincia, conEjemplo }) {
-  const cred = await createUserWithEmailAndPassword(auth, correo, clave);
-  const uid = cred.user.uid;
-  await updateProfile(cred.user, { displayName: nombre });
+  let listo;
+  altaEnCurso = new Promise(res => { listo = res; });
 
-  const perfil = DB.perfilNuevo({ uid, nombre, correo, provincia });
-  await setDoc(doc(db, 'usuarios', uid), perfil);
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, correo, clave);
+    const uid = cred.user.uid;
 
-  if (conEjemplo) {
-    const ejemplo = DB.datosDeEjemplo();
-    await sembrarEjemplo(uid, ejemplo.registros, ejemplo.notificaciones);
+    await updateProfile(cred.user, { displayName: nombre });
+
+    const perfil = DB.perfilNuevo({ uid, nombre, correo, provincia });
+    await setDoc(doc(db, 'usuarios', uid), perfil);
+
+    let totales = { co2: 0, acciones: 0 };
+    if (conEjemplo) {
+      const ejemplo = DB.datosDeEjemplo();
+      await sembrarEjemplo(uid, ejemplo.registros, ejemplo.notificaciones);
+      totales = {
+        co2: +ejemplo.registros.reduce((a, r) => a + r.co2, 0).toFixed(1),
+        acciones: ejemplo.registros.length
+      };
+    }
+    await publicarEnComunidad(uid, perfil, totales);
+    return cred.user;
+  } finally {
+    // La puerta se abre pase lo que pase: si el alta falla, un acceso
+    // posterior no debe quedarse esperando para siempre.
+    listo();
   }
-  await publicarEnComunidad(uid, perfil, { co2: 0, acciones: 0 });
-  return cred.user;
 }
 
 /* ==========================================================================
@@ -275,6 +297,8 @@ let primeraVez = true;
 onAuthStateChanged(auth, async usuario => {
   try {
     if (usuario) {
+      // Si hay un alta a medio escribir, se espera antes de leer.
+      if (altaEnCurso) { await altaEnCurso; altaEnCurso = null; }
       const datos = await cargarTodo(usuario.uid);
       const comunidad = await cargarComunidad();
       DB.iniciarNube(usuario.uid, usuario.email, datos, comunidad);
@@ -288,9 +312,18 @@ onAuthStateChanged(auth, async usuario => {
     window.UI?.toast('Sin acceso a la base de datos', traducir(e), 'error', 9000);
   }
 
+  /* Tras entrar o crear la cuenta, la ruta actual sigue siendo pública
+     (#/acceso o #/registro). Hay que llevar a la persona adentro; si no,
+     se quedaría mirando el formulario que acaba de completar. */
+  const rutaActual = location.hash.replace(/^#/, '');
+  const enPublica = ['/acceso', '/registro', ''].includes(rutaActual);
+
   if (primeraVez) {
     primeraVez = false;
     Aplicacion.arrancar('nube');
+    if (usuario && enPublica) Router.ir('/inicio');
+  } else if (usuario && enPublica) {
+    Router.ir('/inicio');
   } else {
     Router.resolver();
   }
