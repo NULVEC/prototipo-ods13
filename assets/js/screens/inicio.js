@@ -34,7 +34,6 @@ Screens.inicio = {
     const racha = DB.racha();
     const tabla = DB.tablaComunidad();
     const miPos = tabla.find(t => t.alias === u.alias)?.pos ?? '—';
-    const ultimos = DB.registrosOrdenados().slice(0, 5);
     const consejo = DB.consejos[new Date().getDate() % DB.consejos.length];
 
     /* El titular del mes cambia según qué tan cerca está la meta: si ya la
@@ -151,29 +150,12 @@ Screens.inicio = {
             </div>
           </div>
 
-          <div class="panel">
-            <div class="panel-head">
-              ${Icon.get('reloj', 18)}<h3>Lo último que hiciste</h3>
-              <a class="btn btn-ghost btn-sm" href="#/progreso">Ver todo ${Icon.get('chevronDer', 14)}</a>
-            </div>
-            ${ultimos.length ? `<ul class="feed">${ultimos.map(r => {
-              const cat = DB.CATEGORIAS[r.categoria];
-              const tipo = DB.tipoDe(r.categoria, r.tipo);
-              return `<li>
-                <span class="feed-icon">${Icon.get(cat.icono, 17)}</span>
-                <div class="feed-body">
-                  <b>${UI.esc(tipo.nombre)}</b>
-                  <p>${DB.fmt.n(r.cantidad, 1)} ${cat.unidad} · ${DB.fmt.fechaCorta(r.fecha)}</p>
-                </div>
-                <div class="feed-meta">+${DB.fmt.co2(r.co2)}<br><span class="label-micro">kg CO₂</span></div>
-              </li>`;
-            }).join('')}</ul>` : `
-              <div class="empty">${Icon.get('bandeja', 34, 1.5)}
-                <h3>Todavía no hay nada</h3>
-                <p>Apenas registrés tu primera acción va a aparecer aquí.</p>
-                <a class="btn btn-primary" href="#/nueva-accion">Registrar acción</a>
-              </div>`}
-          </div>
+          <!-- El historial completo vive en Mi progreso (UC5). Tenerlo aquí
+               recortado a cinco filas repetía la misma información y alargaba
+               una pantalla que debe leerse de un vistazo. -->
+          <a class="btn btn-ghost" href="#/progreso" style="justify-content:space-between">
+            <span>Ver todo lo que has registrado</span>${Icon.get('chevronDer', 15)}
+          </a>
         </div>
       </section>`;
   },

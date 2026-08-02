@@ -46,7 +46,7 @@ Screens.progreso = {
         </div>
       </section>
 
-      <section class="section grid grid-main-aside">
+      <section class="section">
         <div class="panel">
           <div class="panel-head">
             ${Icon.get('progreso', 18)}<h3>Cómo te ha ido, semana a semana</h3>
@@ -56,17 +56,6 @@ Screens.progreso = {
               aria-label="Gráfico de líneas con el CO2 evitado por semana" role="img"></canvas></div>
           </div>
           <div class="panel-foot">Cada punto junta una semana. La zona sombreada es el total que llevás sumado.</div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head">${Icon.get('filtro', 18)}<h3>¿De dónde sale tu CO₂ evitado?</h3></div>
-          <div class="panel-body">
-            <div class="chart-box"><canvas id="g-reparto"
-              aria-label="Gráfico de anillo con el reparto por categoría" role="img"></canvas></div>
-            <div class="legend">
-              ${cats.map(c => `<span><i style="background:${c.color}"></i>${c.nombre}</span>`).join('')}
-            </div>
-          </div>
         </div>
       </section>
 
@@ -81,7 +70,9 @@ Screens.progreso = {
         </div>
 
         <div class="panel">
-          <div class="panel-head">${Icon.get('pulso', 18)}<h3>El desglose, categoría por categoría</h3></div>
+          <div class="panel-head">
+            ${Icon.get('filtro', 18)}<h3>¿De dónde sale tu CO₂ evitado?</h3>
+          </div>
           <div class="panel-body">
             <ul class="breakdown">
               ${cats.map(c => `
@@ -174,7 +165,6 @@ Screens.progreso = {
     const lista = DB.enUltimosDias(p);
 
     Charts.evolucion('g-evolucion', DB.serieSemanal(Math.round(p / 7)));
-    Charts.reparto('g-reparto', DB.porCategoria(lista).filter(c => c.co2 > 0));
     Charts.porDiaSemana('g-dias', lista);
 
     /* Cambio de periodo: vuelve a dibujar toda la pantalla. */

@@ -121,52 +121,42 @@ Screens.comunidad = {
           </div>
         </div>
 
-        <div class="grid grid-aside-main">
-          <div class="panel">
-            <div class="panel-head">${Icon.get('progreso', 18)}<h3>CO₂ evitado por participante</h3></div>
-            <div class="panel-body">
-              <div class="chart-box is-tall"><canvas id="g-ranking"
-                aria-label="Ranking anónimo de CO2 evitado por participante" role="img"></canvas></div>
-            </div>
-          </div>
-
-          <div class="table-wrap">
-            <table class="data">
-              <caption class="sr-only">Comparativa comunitaria anónima</caption>
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Alias</th>
-                  <th scope="col">Provincia</th>
-                  <th scope="col" class="align-r">Acciones</th>
-                  <th scope="col" class="align-r">CO₂ evitado</th>
-                  <th scope="col" class="align-r">vs. promedio</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${tabla.map(c => {
-                  const d = c.co2 - promedio;
-                  return `<tr class="${c.alias === alias ? 'is-me' : ''}">
-                    <td class="mono">${c.pos}</td>
-                    <td><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
-                      <span class="avatar avatar-sm">${c.alias.slice(0, 2).toUpperCase()}</span>
-                      <b>${UI.esc(c.alias)}</b>
-                      ${c.alias === alias ? '<span class="tag tag-azul">vos</span>' : ''}
-                      ${c.simulado ? '<span class="tag">simulado</span>' : ''}
-                    </span></td>
-                    <td>${UI.esc(c.zona)}</td>
-                    <td class="align-r mono">${c.acciones}</td>
-                    <td class="align-r mono"><b>${DB.fmt.n(c.co2, 1)}</b> kg</td>
-                    <td class="align-r mono">
-                      <span class="delta ${d >= 0 ? 'delta-up' : 'delta-down'}">
-                        ${d >= 0 ? '+' : ''}${DB.fmt.n(d, 1)}
-                      </span>
-                    </td>
-                  </tr>`;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
+        <div class="table-wrap">
+          <table class="data">
+            <caption class="sr-only">Comparativa comunitaria anónima</caption>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Alias</th>
+                <th scope="col">Provincia</th>
+                <th scope="col" class="align-r">Acciones</th>
+                <th scope="col" class="align-r">CO₂ evitado</th>
+                <th scope="col" class="align-r">vs. promedio</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tabla.map(c => {
+                const d = c.co2 - promedio;
+                return `<tr class="${c.alias === alias ? 'is-me' : ''}">
+                  <td class="mono">${c.pos}</td>
+                  <td><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
+                    <span class="avatar avatar-sm">${c.alias.slice(0, 2).toUpperCase()}</span>
+                    <b>${UI.esc(c.alias)}</b>
+                    ${c.alias === alias ? '<span class="tag tag-azul">vos</span>' : ''}
+                    ${c.simulado ? '<span class="tag">simulado</span>' : ''}
+                  </span></td>
+                  <td>${UI.esc(c.zona)}</td>
+                  <td class="align-r mono">${c.acciones}</td>
+                  <td class="align-r mono"><b>${DB.fmt.n(c.co2, 1)}</b> kg</td>
+                  <td class="align-r mono">
+                    <span class="delta ${d >= 0 ? 'delta-up' : 'delta-down'}">
+                      ${d >= 0 ? '+' : ''}${DB.fmt.n(d, 1)}
+                    </span>
+                  </td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
         </div>
 
         ${simulados ? `
@@ -189,7 +179,6 @@ Screens.comunidad = {
     this.montarPodio(completa, alias);
 
     Charts.contraComunidad('g-comparativa', DB.serieSemanal(12));
-    Charts.ranking('g-ranking', tabla, alias);
 
     document.getElementById('c-zona').addEventListener('change', e => {
       this.zona = e.target.value;
