@@ -1,0 +1,356 @@
+/* ============================================================================
+   layout.css — Estructura: acceso (público) y armazón de la app (privado).
+
+   Dos armazones:
+     .auth-shell  -> UC1 y UC2. Split 46/54: panel de datos + formulario.
+     .app-shell   -> UC3..UC10. Barra lateral fija + cabecera + contenido.
+   ========================================================================= */
+
+/* ==========================================================================
+   1. ARMAZÓN DE ACCESO (UC1 Registro, UC2 Inicio de sesión)
+   ========================================================================== */
+
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(380px, 46fr) minmax(420px, 54fr);
+  min-height: 100vh;
+}
+
+/* --- Panel izquierdo: tesis de la app, no decoración -------------------- */
+.auth-aside {
+  position: relative;
+  background: var(--pine-900);
+  color: var(--pine-on-dark);
+  padding: var(--s-10) var(--s-12);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.auth-aside::after {  /* milimetrado invertido, apenas perceptible */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(to right,  rgba(194, 211, 203, .06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(194, 211, 203, .06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.auth-aside > * { position: relative; z-index: 1; }
+
+.auth-brand { display: flex; align-items: center; gap: var(--s-3); }
+.auth-brand .mark {
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border: 1px solid rgba(194, 211, 203, .38); border-radius: var(--r-sm);
+  color: var(--azul-bright);
+}
+.auth-brand b {
+  font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  color: #eef2ee; letter-spacing: -.01em; line-height: 1.2;
+}
+.auth-brand span { display: block; }
+
+.auth-thesis { max-width: 42ch; margin: var(--s-10) 0; }
+.auth-thesis h1 {
+  color: #f2f5f1; font-size: var(--t-display); line-height: 1.04;
+  font-variation-settings: "wdth" 88; letter-spacing: -.03em;
+  max-width: 11ch;
+}
+.auth-thesis h1 em {
+  font-style: normal; color: var(--azul-bright);
+  display: block;
+}
+.auth-thesis p { color: var(--pine-on-dark); margin-top: var(--s-5); font-size: var(--t-body); max-width: 34ch; }
+
+/* Lo que la persona podrá hacer. Ocupa el espacio central con información
+   útil en vez de aire: es lo que se pregunta antes de crear una cuenta. */
+.auth-points {
+  list-style: none; margin: var(--s-6) 0 0; padding: 0;
+  border-top: 1px solid rgba(194, 211, 203, .2);
+}
+.auth-points li {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-3) 0; font-size: var(--t-sm);
+  border-bottom: 1px solid rgba(194, 211, 203, .12);
+}
+.auth-points svg { flex: none; color: var(--azul-bright); margin-top: 1px; }
+
+.auth-figure { border-top: 1px solid rgba(194, 211, 203, .2); padding-top: var(--s-5); }
+.auth-figure .label-micro { color: rgba(194, 211, 203, .62); }
+.auth-figure .fig {
+  font-family: var(--font-mono); font-size: 2.25rem; font-weight: 600;
+  color: #f2f5f1; line-height: 1; margin-top: var(--s-2);
+  font-variant-numeric: tabular-nums;
+}
+.auth-figure .fig .unit { color: var(--azul-bright); }
+.auth-figure .src { font-size: var(--t-sm); color: rgba(194, 211, 203, .6); margin-top: var(--s-2); }
+
+/* --- Panel derecho: el formulario --------------------------------------- */
+.auth-main {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: var(--s-12) var(--s-12);
+  background: var(--paper);
+}
+.auth-form-wrap { width: 100%; max-width: 460px; margin-inline: auto; }
+.auth-head { margin-bottom: var(--s-8); }
+.auth-head h2 { font-size: var(--t-h1); margin-bottom: var(--s-2); }
+.auth-head p { color: var(--ink-2); margin: 0; }
+.auth-alt {
+  margin-top: var(--s-8); padding-top: var(--s-5);
+  border-top: 1px solid var(--line); font-size: var(--t-sm); color: var(--ink-2);
+}
+
+/* ==========================================================================
+   2. ARMAZÓN DE LA APLICACIÓN (UC3 .. UC10)
+   ========================================================================== */
+
+.app-shell { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+
+/* --- Barra lateral persistente ------------------------------------------ */
+.sidebar {
+  position: sticky; top: 0; align-self: start;
+  height: 100vh; display: flex; flex-direction: column;
+  background: var(--pine-900); color: var(--pine-on-dark);
+  border-right: 1px solid var(--pine-700);
+}
+
+.sidebar-brand {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-5) var(--s-5);
+  border-bottom: 1px solid rgba(194, 211, 203, .14);
+}
+.sidebar-brand .mark {
+  width: 30px; height: 30px; flex: none; display: grid; place-items: center;
+  border: 1px solid rgba(194, 211, 203, .34); border-radius: var(--r-sm);
+  color: var(--azul-bright);
+}
+.sidebar-brand .name {
+  font-family: var(--font-display); font-weight: 700; font-size: 13.5px;
+  color: #eef2ee; line-height: 1.15; letter-spacing: -.01em;
+}
+.sidebar-brand .ods { display: block; font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: .14em; color: var(--azul-bright); margin-top: 2px; }
+
+.sidebar-nav { padding: var(--s-5) var(--s-3); overflow-y: auto; flex: 1; }
+.nav-group + .nav-group { margin-top: var(--s-6); }
+.nav-group > .label-micro {
+  display: block; padding: 0 var(--s-3) var(--s-2);
+  color: rgba(194, 211, 203, .45); font-size: 10px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: 8px var(--s-3); margin-bottom: 1px;
+  border-radius: var(--r-sm); border-left: 2px solid transparent;
+  color: var(--pine-on-dark); text-decoration: none; font-size: 14px;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.nav-item svg { flex: none; opacity: .72; transition: opacity var(--dur-1) var(--ease); }
+.nav-item:hover { background: rgba(194, 211, 203, .09); color: #eef2ee; }
+.nav-item:hover svg { opacity: 1; }
+.nav-item:focus-visible { outline: 2px solid var(--azul-bright); outline-offset: -2px; }
+.nav-item[aria-current="page"] {
+  background: rgba(91, 155, 232, .13);
+  border-left-color: var(--azul-bright);
+  color: #f2f5f1; font-weight: 600;
+}
+.nav-item[aria-current="page"] svg { opacity: 1; color: var(--azul-bright); }
+
+/* Contador de pendientes (notificaciones) */
+.nav-count {
+  margin-left: auto; font-family: var(--font-mono); font-size: 10px;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  display: grid; place-items: center;
+  background: var(--ember); color: #fff; font-weight: 600;
+}
+
+/* Avance de la meta mensual: cierra la navegación con el dato de cabecera */
+.sidebar-meta {
+  padding: var(--s-4) var(--s-5);
+  border-top: 1px solid rgba(194, 211, 203, .14);
+}
+.sidebar-meta .label-micro { color: rgba(194, 211, 203, .5); text-transform: uppercase; }
+.sidebar-meta .cifra {
+  margin: var(--s-2) 0 var(--s-3);
+  font-family: var(--font-mono); font-size: var(--t-sm);
+  color: rgba(194, 211, 203, .7);
+}
+.sidebar-meta .cifra .num { font-size: 1.375rem; font-weight: 600; color: #eef2ee; }
+/* Especificidad deliberada: debe ganarle a `.bar.is-azul > i` de
+   components.css, que se carga después de esta hoja. */
+.sidebar-meta .bar.is-azul { background: rgba(194, 211, 203, .14); border-color: rgba(194, 211, 203, .18); }
+.sidebar-meta .bar.is-azul > i { background: var(--azul-bright); }
+
+.sidebar-foot {
+  padding: var(--s-4); border-top: 1px solid rgba(194, 211, 203, .14);
+}
+.sidebar-user {
+  display: flex; align-items: center; gap: var(--s-3); width: 100%;
+  background: none; border: 0; padding: var(--s-2); border-radius: var(--r-sm);
+  color: inherit; text-align: left; cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
+}
+.sidebar-user:hover { background: rgba(194, 211, 203, .09); }
+.sidebar-user .avatar { flex: none; }
+.sidebar-user .who { min-width: 0; }
+.sidebar-user .who b { display: block; font-size: 13px; color: #eef2ee; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user .who span { display: block; font-size: 11px; color: rgba(194, 211, 203, .6); }
+
+/* --- Área de contenido -------------------------------------------------- */
+.app-main { min-width: 0; display: flex; flex-direction: column; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: var(--s-4);
+  height: var(--topbar-h); padding: 0 var(--s-8);
+  background: rgba(233, 235, 228, .93);
+  backdrop-filter: saturate(1.2);
+  border-bottom: 1px solid var(--line);
+}
+.topbar h1 { font-size: var(--t-h3); letter-spacing: -.015em; }
+.topbar .uc-tag {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em;
+  color: var(--ink-3); border: 1px solid var(--line-strong);
+  padding: 2px 6px; border-radius: var(--r-xs); text-transform: uppercase;
+}
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: var(--s-2); }
+
+.menu-toggle { display: none; }
+
+.content {
+  padding: var(--s-8);
+  max-width: var(--content-max);
+  width: 100%;
+  flex: 1;
+}
+
+/* ==========================================================================
+   3. FIRMA: CINTA DE CARBONO
+   Traza tipo sismógrafo de los últimos 90 días de CO2 evitado. Aparece en
+   todas las pantallas autenticadas: es el "pulso" del instrumento y da
+   continuidad visual entre casos de uso.
+   ========================================================================== */
+
+.ribbon {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-raised);
+  padding: var(--s-4) var(--s-8) var(--s-3);
+}
+.ribbon-head {
+  display: flex; align-items: baseline; gap: var(--s-4);
+  margin-bottom: var(--s-3);
+}
+.ribbon-head .ribbon-read {
+  margin-left: auto; font-family: var(--font-mono); font-size: var(--t-sm);
+  color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.ribbon-head .ribbon-read b { color: var(--pine); font-weight: 600; }
+
+.ribbon-track {
+  display: flex; align-items: flex-end; gap: 2px;
+  height: 46px; position: relative;
+  border-bottom: 1px solid var(--line-strong);
+}
+/* línea de referencia = promedio del periodo */
+.ribbon-track::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: var(--avg, 40%);
+  border-top: 1px dashed var(--line-strong); opacity: .8;
+}
+
+.ribbon-bar {
+  flex: 1 1 0; min-width: 2px;
+  background: var(--pine-mid);
+  border: 0; padding: 0; cursor: pointer;
+  height: var(--h);
+  transform-origin: bottom;
+  transform: scaleY(0);
+  animation: ribbon-rise var(--dur-3) var(--ease) forwards;
+  animation-delay: var(--d, 0ms);
+  transition: background var(--dur-1) var(--ease);
+}
+.ribbon-bar:hover { background: var(--pine-700); }
+.ribbon-bar.is-today { background: var(--azul); }
+.ribbon-bar.is-zero { background: var(--line-strong); }
+.ribbon-bar:focus-visible { outline: 2px solid var(--azul); outline-offset: 1px; }
+
+@keyframes ribbon-rise { to { transform: scaleY(1); } }
+
+.ribbon-axis {
+  display: flex; justify-content: space-between;
+  margin-top: var(--s-2);
+}
+.ribbon-axis span { font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); }
+
+/* ==========================================================================
+   4. REJILLAS DE CONTENIDO — asimétricas donde el contenido lo pide
+   ========================================================================== */
+
+.grid { display: grid; gap: var(--s-5); }
+.grid-2       { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3       { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-4       { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid-main-aside  { grid-template-columns: minmax(0, 1.85fr) minmax(280px, 1fr); }
+.grid-aside-main  { grid-template-columns: minmax(260px, 1fr) minmax(0, 2.1fr); }
+.grid-form    { grid-template-columns: minmax(0, 1.25fr) minmax(300px, .85fr); align-items: start; }
+
+.section + .section { margin-top: var(--s-10); }
+.section-head {
+  display: flex; align-items: baseline; gap: var(--s-3) var(--s-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-4); padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--line);
+}
+.section-head h2 { font-size: var(--t-h2); }
+.section-head .section-aside {
+  margin-left: auto; display: flex; gap: var(--s-2);
+  align-items: center; flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   5. ADAPTABILIDAD
+   ========================================================================== */
+
+@media (max-width: 1180px) {
+  .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-main-aside, .grid-aside-main, .grid-form { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .auth-shell { grid-template-columns: minmax(0, 1fr); }
+  .auth-aside { padding: var(--s-8) var(--s-6); }
+  .auth-thesis { margin: var(--s-8) 0; }
+  .auth-thesis h1 { font-size: 2.125rem; }
+  .auth-main { padding: var(--s-8) var(--s-6) var(--s-12); }
+
+  .app-shell { grid-template-columns: minmax(0, 1fr); }
+
+  /* La barra lateral pasa a panel deslizante */
+  .sidebar {
+    position: fixed; inset: 0 auto 0 0; z-index: 90; width: 268px;
+    transform: translateX(-100%);
+    transition: transform var(--dur-3) var(--ease);
+    box-shadow: var(--shadow-pop);
+  }
+  body.nav-open .sidebar { transform: translateX(0); }
+  body.nav-open .scrim { opacity: 1; pointer-events: auto; }
+
+  .scrim {
+    position: fixed; inset: 0; z-index: 80; background: rgba(12, 41, 33, .5);
+    opacity: 0; pointer-events: none; transition: opacity var(--dur-2) var(--ease);
+    border: 0;
+  }
+
+  .menu-toggle { display: inline-flex; }
+  .topbar { padding: 0 var(--s-4); }
+  .ribbon { padding: var(--s-3) var(--s-4); }
+  .content { padding: var(--s-5) var(--s-4) var(--s-12); }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 560px) {
+  :root { --t-h1: 1.625rem; --t-h2: 1.25rem; --t-display: 2.125rem; }
+  .topbar .uc-tag { display: none; }
+  .ribbon-track { height: 34px; }
+}
+
+/* No mostrar el velo en escritorio aunque quede el estado abierto */
+@media (min-width: 901px) { .scrim { display: none; } }

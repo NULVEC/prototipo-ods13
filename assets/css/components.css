@@ -1,0 +1,567 @@
+/* ============================================================================
+   components.css — Piezas reutilizables. Cada componente define TODOS sus
+   estados: reposo, hover, foco, activo, deshabilitado y cargando. Un control
+   sin estado de foco visible se considera roto.
+   ========================================================================= */
+
+/* ==========================================================================
+   BOTONES
+   Superficie plana + regla de 1px. El movimiento en hover es de 1px: se nota
+   al usarlo y no al mirarlo.
+   ========================================================================== */
+
+.btn {
+  --btn-bg: var(--paper-raised);
+  --btn-fg: var(--ink);
+  --btn-bd: var(--line-strong);
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  padding: 9px var(--s-4); min-height: 38px;
+  font-family: var(--font-body); font-size: var(--t-body); font-weight: 600;
+  line-height: 1; white-space: nowrap;
+  color: var(--btn-fg); background: var(--btn-bg);
+  border: 1px solid var(--btn-bd); border-radius: var(--r-sm);
+  cursor: pointer; text-decoration: none;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+              transform var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.btn svg { flex: none; }
+.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+.btn:active { transform: translateY(0); box-shadow: none; }
+.btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.btn-primary { --btn-bg: var(--pine); --btn-fg: #f2f5f1; --btn-bd: var(--pine-700); }
+.btn-primary:hover { --btn-bg: var(--pine-700); }
+
+.btn-accent  { --btn-bg: var(--azul); --btn-fg: #fff; --btn-bd: var(--azul-700); }
+.btn-accent:hover { --btn-bg: var(--azul-700); }
+
+.btn-ghost   { --btn-bg: transparent; --btn-bd: transparent; --btn-fg: var(--ink-2); }
+.btn-ghost:hover { --btn-bg: var(--paper-sunken); --btn-fg: var(--ink); box-shadow: none; }
+
+.btn-danger  { --btn-bg: transparent; --btn-fg: var(--ember); --btn-bd: var(--ember); }
+.btn-danger:hover { --btn-bg: var(--ember); --btn-fg: #fff; }
+
+.btn-sm { min-height: 30px; padding: 6px var(--s-3); font-size: var(--t-sm); }
+.btn-block { width: 100%; }
+
+.btn[disabled], .btn[aria-disabled="true"] {
+  opacity: .45; cursor: not-allowed; transform: none; box-shadow: none;
+  filter: saturate(.4);
+}
+
+/* Estado cargando: el rótulo se oculta pero el botón conserva su ancho,
+   así el layout no salta. */
+.btn.is-loading { pointer-events: none; color: transparent; }
+.btn.is-loading > * { visibility: hidden; }
+.btn.is-loading::after {
+  content: ""; position: absolute; width: 15px; height: 15px;
+  border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%;
+  color: var(--btn-fg); visibility: visible;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Botón sólo icono (barra superior) */
+.btn-icon {
+  width: 36px; height: 36px; min-height: 0; padding: 0;
+  border-color: transparent; background: transparent; color: var(--ink-2);
+}
+.btn-icon:hover { background: var(--paper-sunken); color: var(--ink); border-color: var(--line); }
+
+/* Marcador sobre el icono de campana */
+.btn-icon .dot {
+  position: absolute; top: 6px; right: 6px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--ember); border: 1.5px solid var(--paper);
+}
+
+/* ==========================================================================
+   PANELES  (nada de tarjetas flotantes: superficie + regla)
+   ========================================================================== */
+
+.panel {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+}
+.panel-head {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--line);
+}
+.panel-head h3 { flex: 1; min-width: 0; }
+.panel-body { padding: var(--s-5); }
+.panel-foot {
+  padding: var(--s-3) var(--s-5); border-top: 1px solid var(--line);
+  background: var(--paper-sunken); border-radius: 0 0 var(--r-md) var(--r-md);
+  font-size: var(--t-sm); color: var(--ink-2);
+}
+.panel-dark { background: var(--pine-900); border-color: var(--pine-700); color: var(--pine-on-dark); }
+.panel-dark h3, .panel-dark h2 { color: #f2f5f1; }
+.panel-dark .panel-head { border-bottom-color: rgba(194, 211, 203, .16); }
+
+/* ==========================================================================
+   LECTURAS (los "KPI" del instrumento)
+   Regla superior gruesa en el color de la magnitud: identifica la métrica
+   sin necesidad de iconos de colores.
+   ========================================================================== */
+
+.readout {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent, var(--pine));
+  border-radius: var(--r-sm);
+  padding: var(--s-4) var(--s-5);
+  min-width: 0;
+}
+.readout .label-micro { display: flex; align-items: center; gap: 6px; }
+.readout .value {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 1.875rem; font-weight: 600; line-height: 1.1;
+  margin-top: var(--s-2); color: var(--ink); letter-spacing: -.02em;
+}
+.readout .value .unit { font-size: .5em; }
+.readout .foot { font-size: var(--t-sm); color: var(--ink-3); margin-top: var(--s-2); }
+.readout.is-accent { --accent: var(--azul); }
+.readout.is-ember  { --accent: var(--ember); }
+.readout.is-ochre  { --accent: var(--ochre-fill); }
+
+.delta { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono);
+  font-size: var(--t-sm); font-weight: 500; }
+.delta-up   { color: var(--pine); }
+.delta-down { color: var(--ember); }
+
+/* ==========================================================================
+   FORMULARIOS
+   ========================================================================== */
+
+.field { margin-bottom: var(--s-5); }
+.field:last-child { margin-bottom: 0; }
+
+/* Se excluyen .check y .switch: son etiquetas que envuelven el control y
+   necesitan conservar su propio display:flex. */
+.field > label:not(.check):not(.switch), .field-label {
+  display: block; font-size: var(--t-sm); font-weight: 600;
+  color: var(--ink); margin-bottom: 6px;
+}
+.field .hint { display: block; font-size: var(--t-sm); color: var(--ink-3); margin-top: 5px; }
+.field .req { color: var(--ember); margin-left: 2px; }
+
+.input, .select, .textarea {
+  display: block; width: 100%;
+  padding: 10px var(--s-3); min-height: 40px;
+  background: var(--paper-pure); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+  font-size: var(--t-body);
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease),
+              background var(--dur-1) var(--ease);
+}
+.input::placeholder, .textarea::placeholder { color: #9aa69f; }
+.input:hover, .select:hover, .textarea:hover { border-color: var(--ink-3); }
+.input:focus, .select:focus, .textarea:focus {
+  outline: none; border-color: var(--azul);
+  box-shadow: 0 0 0 3px var(--azul-tint);
+  background: #fff;
+}
+.textarea { min-height: 96px; resize: vertical; line-height: 1.55; }
+
+.select {
+  appearance: none; padding-right: var(--s-8); cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2366746c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+
+.input[disabled], .select[disabled], .textarea[disabled] {
+  background: var(--paper-sunken); color: var(--ink-3);
+  border-color: var(--line); cursor: not-allowed;
+}
+
+/* Campo con unidad fija a la derecha (kg, km, kWh…) */
+.input-group { position: relative; display: flex; align-items: stretch; }
+.input-group .input { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.input-group .addon {
+  display: grid; place-items: center; padding: 0 var(--s-3);
+  background: var(--paper-sunken); border: 1px solid var(--line-strong); border-left: 0;
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-family: var(--font-mono); font-size: var(--t-sm); color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* Campo con icono a la izquierda */
+.input-icon { position: relative; }
+.input-icon svg {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: var(--ink-3); pointer-events: none;
+}
+.input-icon .input { padding-left: 38px; }
+
+/* Botón de revelar contraseña */
+.reveal {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; display: grid; place-items: center;
+  background: none; border: 0; border-radius: var(--r-xs);
+  color: var(--ink-3); cursor: pointer;
+  transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.reveal:hover { color: var(--ink); background: var(--paper-sunken); }
+
+/* --- Validación: color + icono + texto, nunca sólo color ---------------- */
+.field.is-invalid .input,
+.field.is-invalid .select { border-color: var(--ember); box-shadow: 0 0 0 3px var(--ember-tint); }
+.field.is-valid   .input,
+.field.is-valid   .select { border-color: var(--pine); }
+
+.field-msg {
+  display: none; align-items: center; gap: 5px;
+  font-size: var(--t-sm); margin-top: 6px; font-weight: 500;
+}
+.field.is-invalid .field-msg { display: flex; color: var(--ember); }
+.field-msg svg { flex: none; }
+
+/* Marca de campo correcto: una casilla dentro del control, sin ocupar línea
+   propia. Se omite en los campos que ya usan el borde derecho (unidad,
+   botón de revelar), donde se superpondría. */
+.field.is-valid > .input,
+.field.is-valid > .input-icon:not(:has(.reveal)) > .input {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2317493b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 38px;
+}
+
+/* Medidor de fortaleza de contraseña */
+.meter { display: flex; gap: 3px; margin-top: 8px; }
+.meter i {
+  height: 4px; flex: 1; border-radius: 2px; background: var(--paper-sunken);
+  transition: background var(--dur-2) var(--ease);
+}
+.meter[data-level="1"] i:nth-child(-n+1) { background: var(--ember); }
+.meter[data-level="2"] i:nth-child(-n+2) { background: var(--ochre-fill); }
+.meter[data-level="3"] i:nth-child(-n+3) { background: var(--pine-mid); }
+.meter[data-level="4"] i { background: var(--pine); }
+
+/* Casilla y conmutador */
+.check { display: flex; align-items: flex-start; gap: var(--s-3); cursor: pointer; font-size: var(--t-sm); }
+.check input {
+  flex: none; width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--pine);
+  cursor: pointer;
+}
+.check span { color: var(--ink-2); }
+
+.switch { display: flex; align-items: center; gap: var(--s-3); cursor: pointer; }
+.switch input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0;
+  pointer-events: none;   /* 1px y no 0: mantiene el control enfocable por teclado */
+}
+.switch .track {
+  flex: none; width: 40px; height: 22px; border-radius: 11px;
+  background: var(--line-strong); position: relative;
+  transition: background var(--dur-2) var(--ease);
+}
+.switch .track::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .28);
+  transition: transform var(--dur-2) var(--ease);
+}
+.switch input:checked + .track { background: var(--pine); }
+.switch input:checked + .track::after { transform: translateX(18px); }
+.switch input:focus-visible + .track { box-shadow: var(--focus-ring); }
+.switch input[disabled] + .track { opacity: .45; }
+
+/* --- Selección por tarjetas (tipo de acción, UC4) ----------------------- */
+.choice-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-3); }
+.choice { position: relative; }
+.choice input {
+  position: absolute; width: 1px; height: 1px; opacity: 0; margin: 0;
+  pointer-events: none;
+}
+.choice .box {
+  display: block; padding: var(--s-4) var(--s-3); height: 100%;
+  background: var(--paper-pure); border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm); cursor: pointer;
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease),
+              box-shadow var(--dur-1) var(--ease);
+}
+.choice .box svg { color: var(--ink-2); margin-bottom: var(--s-3); }
+.choice .box b { display: block; font-size: var(--t-body); font-weight: 600; }
+.choice .box small { display: block; font-size: var(--t-sm); color: var(--ink-3); line-height: 1.4; margin-top: 2px; }
+.choice .box:hover { border-color: var(--ink-3); background: #fff; }
+.choice input:checked + .box {
+  border-color: var(--pine); background: var(--pine-tint);
+  box-shadow: inset 0 0 0 1px var(--pine);
+}
+.choice input:checked + .box svg { color: var(--pine); }
+.choice input:focus-visible + .box { box-shadow: var(--focus-ring); }
+
+/* ==========================================================================
+   DISTINTIVOS, ETIQUETAS Y FICHAS
+   ========================================================================== */
+
+.tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: var(--r-xs);
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .06em; text-transform: uppercase; font-weight: 500;
+  background: var(--paper-sunken); color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+.tag-pine  { background: var(--pine-tint);  color: var(--pine-700);  border-color: #b6ccc0; }
+.tag-azul  { background: var(--azul-tint);  color: var(--azul-700);  border-color: #b9cdea; }
+.tag-ochre { background: var(--ochre-tint); color: var(--ochre-text); border-color: #ddcda2; }
+.tag-ember { background: var(--ember-tint); color: var(--ember-700); border-color: #e6bcb1; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 3px; font-size: var(--t-sm); font-weight: 500;
+  background: var(--paper-raised); border: 1px solid var(--line-strong);
+  color: var(--ink-2); cursor: pointer;
+  transition: all var(--dur-1) var(--ease);
+}
+.chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--pine); border-color: var(--pine-700); color: #f2f5f1; }
+.chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.avatar {
+  width: 32px; height: 32px; border-radius: var(--r-sm);
+  display: grid; place-items: center;
+  background: var(--pine-mid); color: #0c2921;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  letter-spacing: .02em;
+}
+.avatar-lg { width: 64px; height: 64px; font-size: 22px; border-radius: var(--r-md); }
+.avatar-sm { width: 26px; height: 26px; font-size: 10px; }
+
+/* ==========================================================================
+   BARRA DE PROGRESO
+   ========================================================================== */
+
+.bar {
+  height: 7px; background: var(--paper-sunken); border-radius: 4px; overflow: hidden;
+  border: 1px solid var(--line);
+}
+.bar > i {
+  display: block; height: 100%; width: var(--p, 0%);
+  background: var(--pine); border-radius: 3px;
+  transition: width var(--dur-3) var(--ease);
+}
+.bar.is-azul  > i { background: var(--azul); }
+.bar.is-ochre > i { background: var(--ochre-fill); }
+
+/* ==========================================================================
+   TABLAS
+   ========================================================================== */
+
+/* `position: relative` no es decorativo: sin él, los textos .sr-only del
+   interior (que van en posición absoluta) escapan del recorte y estiran el
+   ancho del documento en pantallas angostas. */
+.table-wrap {
+  position: relative; overflow-x: auto;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--paper-raised);
+}
+table.data { width: 100%; border-collapse: collapse; font-size: var(--t-sm); min-width: 560px; }
+table.data th {
+  text-align: left; padding: var(--s-3) var(--s-4);
+  font-family: var(--font-mono); font-size: var(--t-micro); font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  background: var(--paper-sunken); border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+table.data td { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.data tbody tr:last-child td { border-bottom: 0; }
+table.data tbody tr { transition: background var(--dur-1) var(--ease); }
+table.data tbody tr:hover { background: var(--pine-tint); }
+table.data tbody tr.is-me { background: var(--azul-tint); }
+table.data tbody tr.is-me:hover { background: #cfddf1; }
+table.data .align-r { text-align: right; }
+
+/* ==========================================================================
+   LISTAS DE REGISTRO / NOTIFICACIONES
+   ========================================================================== */
+
+.feed { list-style: none; margin: 0; padding: 0; }
+.feed > li {
+  display: flex; gap: var(--s-4); padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--line);
+  transition: background var(--dur-1) var(--ease);
+}
+.feed > li:last-child { border-bottom: 0; }
+.feed > li:hover { background: var(--paper-sunken); }
+.feed .feed-icon {
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center;
+  border-radius: var(--r-sm); background: var(--pine-tint); color: var(--pine);
+  border: 1px solid #b6ccc0;
+}
+.feed .feed-icon.is-azul  { background: var(--azul-tint);  color: var(--azul);      border-color: #b9cdea; }
+.feed .feed-icon.is-ochre { background: var(--ochre-tint); color: var(--ochre-text); border-color: #ddcda2; }
+.feed .feed-icon.is-ember { background: var(--ember-tint); color: var(--ember);     border-color: #e6bcb1; }
+.feed .feed-body { flex: 1; min-width: 0; }
+.feed .feed-body b { display: block; font-size: var(--t-body); font-weight: 600; }
+.feed .feed-body p { margin: 2px 0 0; font-size: var(--t-sm); color: var(--ink-2); }
+.feed .feed-meta { flex: none; text-align: right; font-family: var(--font-mono); font-size: var(--t-sm); color: var(--ink-3); }
+.feed > li.is-unread { background: #fdfdf9; }
+.feed > li.is-unread .feed-body b::after {
+  content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--azul); margin-left: 7px; vertical-align: middle;
+}
+
+/* ==========================================================================
+   INSIGNIAS  (UC7) — sello hexagonal, no medalla genérica
+   ========================================================================== */
+
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--s-4); }
+
+.badge-card {
+  text-align: center; padding: var(--s-5) var(--s-4);
+  background: var(--paper-raised); border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: border-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
+}
+.badge-card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+
+.seal {
+  width: 74px; height: 84px; margin: 0 auto var(--s-4);
+  display: grid; place-items: center;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: var(--pine); color: #eef4f0;
+}
+.seal.is-ochre { background: var(--ochre-fill); color: #2c1f04; }
+.seal.is-azul  { background: var(--azul); color: #fff; }
+.badge-card h3 { font-size: var(--t-body); margin-bottom: 4px; }
+.badge-card p { font-size: var(--t-sm); color: var(--ink-3); margin: 0; line-height: 1.45; }
+.badge-card .earned { display: inline-flex; margin-top: var(--s-4); }
+
+.badge-card.is-locked { background: var(--paper); }
+.badge-card.is-locked .seal { background: var(--paper-sunken); color: var(--ink-3); border: 1px dashed var(--line-strong); }
+.badge-card.is-locked h3, .badge-card.is-locked p { color: var(--ink-3); }
+
+/* ==========================================================================
+   AVISOS EN LÍNEA
+   ========================================================================== */
+
+.notice {
+  display: flex; gap: var(--s-3); padding: var(--s-4);
+  border-radius: var(--r-sm); font-size: var(--t-sm); line-height: 1.55;
+  border: 1px solid var(--line); background: var(--paper-sunken); color: var(--ink-2);
+}
+.notice svg { flex: none; margin-top: 1px; }
+.notice b { color: var(--ink); }
+.notice-info  { background: var(--azul-tint);  border-color: #b9cdea; color: var(--azul-700); }
+.notice-ok    { background: var(--pine-tint);  border-color: #b6ccc0; color: var(--pine-700); }
+.notice-warn  { background: var(--ochre-tint); border-color: #ddcda2; color: var(--ochre-text); }
+.notice-error { background: var(--ember-tint); border-color: #e6bcb1; color: var(--ember-700); }
+.notice-info b, .notice-ok b, .notice-warn b, .notice-error b { color: inherit; }
+
+/* ==========================================================================
+   AVISOS EMERGENTES (toast)
+   ========================================================================== */
+
+.toast-stack {
+  position: fixed; z-index: 120; right: var(--s-6); bottom: var(--s-6);
+  display: flex; flex-direction: column; gap: var(--s-2);
+  max-width: min(400px, calc(100vw - 32px));
+}
+.toast {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--pine-900); color: #eef2ee;
+  border-radius: var(--r-sm); box-shadow: var(--shadow-pop);
+  border-left: 3px solid var(--pine-mid);
+  animation: toast-in var(--dur-3) var(--ease);
+  font-size: var(--t-sm);
+}
+.toast.is-ok    { border-left-color: #6fbf9c; }
+.toast.is-error { border-left-color: #e2705a; }
+.toast.is-info  { border-left-color: var(--azul-bright); }
+.toast svg { flex: none; margin-top: 2px; }
+.toast b { display: block; font-weight: 600; font-size: var(--t-body); }
+.toast p { margin: 2px 0 0; color: var(--pine-on-dark); }
+.toast.is-out { animation: toast-out var(--dur-2) var(--ease) forwards; }
+
+@keyframes toast-in  { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+@keyframes toast-out { to   { opacity: 0; transform: translateX(16px); } }
+
+@media (max-width: 560px) {
+  .toast-stack { right: var(--s-3); left: var(--s-3); bottom: var(--s-3); max-width: none; }
+}
+
+/* ==========================================================================
+   ESQUELETOS DE CARGA
+   ========================================================================== */
+
+.skeleton {
+  background: linear-gradient(90deg, var(--paper-sunken) 25%, #e7eae1 37%, var(--paper-sunken) 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+  border-radius: var(--r-xs);
+}
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.sk-line { height: 12px; margin-bottom: 9px; }
+.sk-line:last-child { width: 62%; margin-bottom: 0; }
+.sk-block { height: 220px; }
+
+/* ==========================================================================
+   ESTADO VACÍO
+   ========================================================================== */
+
+.empty { text-align: center; padding: var(--s-12) var(--s-6); }
+.empty svg { margin: 0 auto var(--s-4); color: var(--line-strong); }
+.empty h3 { margin-bottom: var(--s-2); }
+.empty p { color: var(--ink-3); max-width: 42ch; margin-inline: auto; }
+.empty .btn { margin-top: var(--s-5); }
+
+/* ==========================================================================
+   LIENZO DE GRÁFICOS
+   ========================================================================== */
+
+.chart-box { position: relative; height: 260px; }
+.chart-box.is-tall { height: 320px; }
+.chart-box.is-short { height: 190px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: var(--s-4); margin-top: var(--s-4); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; font-size: var(--t-sm); color: var(--ink-2); }
+.legend i { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+
+/* ==========================================================================
+   VENTANA MODAL
+   ========================================================================== */
+
+.modal-scrim {
+  position: fixed; inset: 0; z-index: 130;
+  background: rgba(12, 41, 33, .55);
+  display: grid; place-items: center; padding: var(--s-4);
+  animation: fade-in var(--dur-2) var(--ease);
+}
+@keyframes fade-in { from { opacity: 0; } }
+.modal {
+  width: min(520px, 100%); background: var(--paper-raised);
+  border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  animation: modal-in var(--dur-3) var(--ease);
+}
+@keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.985); } }
+.modal-head { padding: var(--s-5) var(--s-5) 0; }
+.modal-body { padding: var(--s-4) var(--s-5) var(--s-5); }
+.modal-foot {
+  display: flex; justify-content: flex-end; gap: var(--s-2);
+  padding: var(--s-4) var(--s-5); border-top: 1px solid var(--line);
+  background: var(--paper-sunken); border-radius: 0 0 var(--r-md) var(--r-md);
+}
+
+/* Celebración de insignia (UC7 extiende UC4) */
+.modal-seal { display: grid; place-items: center; padding: var(--s-8) 0 var(--s-4); }
+.modal-seal .seal { width: 92px; height: 104px; animation: seal-pop 480ms var(--ease); }
+@keyframes seal-pop {
+  0%   { transform: scale(.6) rotate(-8deg); opacity: 0; }
+  60%  { transform: scale(1.06) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); }
+}
+
+/* ==========================================================================
+   ENTRADA DE PANTALLA — una sola transición, deliberadamente breve
+   ========================================================================== */
+
+.view-enter { animation: view-in var(--dur-3) var(--ease); }
+@keyframes view-in { from { opacity: 0; transform: translateY(6px); } }

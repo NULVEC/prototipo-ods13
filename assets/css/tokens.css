@@ -1,0 +1,119 @@
+/* ============================================================================
+   tokens.css — Sistema de diseño: color, tipografía, espaciado, elevación.
+   Ninguna pantalla debe declarar un color o un tamaño "a mano": todo sale
+   de aquí. Esa es la única forma de que 10 pantallas se vean como una app.
+
+   Dirección visual: "instrumento climático personal".
+   La app no es un folleto ecológico, es un tablero de medición. De ahí el
+   papel tipo cuaderno de laboratorio, las reglas de 1px en lugar de sombras
+   difusas, y el monoespaciado para todo dato numérico.
+
+   Paleta derivada del contexto (Costa Rica / ODS 13), no del verde menta
+   genérico de "eco app":
+     - pino    : bosque nuboso, es el color institucional del sistema
+     - azul    : referencia al programa Bandera Azul Ecológica; es el color
+                 de todo lo interactivo (enlaces, foco, series de datos)
+     - ámbar   : reservado para logros e insignias
+     - brasa   : reservado para emisiones, riesgo y errores
+   ========================================================================= */
+
+:root {
+  /* --- Superficies ------------------------------------------------------ */
+  --paper:          #e9ebe4;  /* fondo de la aplicación (liquen pálido)      */
+  --paper-raised:   #f4f5f0;  /* paneles y tarjetas                          */
+  --paper-sunken:   #dee1d8;  /* campos, celdas alternas, zonas hundidas     */
+  --paper-pure:     #fbfbf8;  /* inputs y superficies que deben "abrirse"    */
+
+  /* --- Tinta ------------------------------------------------------------ */
+  --ink:            #12211c;  /* títulos y texto principal                   */
+  --ink-2:          #3d4b45;  /* texto secundario                            */
+  --ink-3:          #66746c;  /* texto terciario / metadatos (AA sobre papel)*/
+
+  /* --- Reglas ----------------------------------------------------------- */
+  --line:           #ccd2c7;
+  --line-strong:    #a5ada2;
+  --line-ink:       #12211c;
+
+  /* --- Pino (marca / primario) ------------------------------------------ */
+  --pine:           #17493b;
+  --pine-700:       #103528;
+  --pine-900:       #0c2921;  /* barra lateral                               */
+  --pine-tint:      #d7e2db;
+  --pine-on-dark:   #c2d3cb;  /* texto sobre pino-900                        */
+  --pine-mid:       #4e8f7c;  /* solo gráficos                               */
+
+  /* --- Azul (interacción, foco, datos) ---------------------------------- */
+  --azul:           #1d4e9b;
+  --azul-700:       #163d7b;
+  --azul-bright:    #5b9be8;  /* solo sobre fondos oscuros                   */
+  --azul-tint:      #dce6f4;
+
+  /* --- Ámbar (logros) --------------------------------------------------- */
+  --ochre-text:     #7d5a12;  /* versión legible para texto                  */
+  --ochre-fill:     #b8862a;  /* versión para gráficos, medallas, rellenos   */
+  --ochre-tint:     #f1e7cf;
+
+  /* --- Brasa (emisiones, error, alerta) --------------------------------- */
+  --ember:          #b8412a;
+  --ember-700:      #8f3220;
+  --ember-tint:     #f6e0da;
+
+  /* --- Tipografía ------------------------------------------------------- */
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --font-body:    "IBM Plex Sans", "Segoe UI", sans-serif;
+  --font-mono:    "IBM Plex Mono", "Consolas", monospace;
+
+  /* Escala tipográfica (1.25 modular, redondeada a px legibles) */
+  --t-display: 2.75rem;  /* 44px — solo el título de la pantalla de acceso  */
+  --t-h1:      1.9375rem;/* 31px */
+  --t-h2:      1.4375rem;/* 23px */
+  --t-h3:      1.125rem; /* 18px */
+  --t-body:    0.9375rem;/* 15px */
+  --t-sm:      0.8125rem;/* 13px */
+  --t-micro:   0.6875rem;/* 11px — etiquetas mono en versalitas             */
+
+  /* --- Espaciado (base 4px) --------------------------------------------- */
+  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;  --s-4: 16px;
+  --s-5: 20px;  --s-6: 24px;  --s-8: 32px;  --s-10: 40px;
+  --s-12: 48px; --s-16: 64px;
+
+  /* --- Radios (contenidos a propósito: nada de píldoras por defecto) ----- */
+  --r-xs: 2px;
+  --r-sm: 3px;
+  --r-md: 5px;
+
+  /* --- Elevación (reglas y sombras cortas, nunca halos difusos) ---------- */
+  --shadow-1: 0 1px 0 rgba(18, 33, 28, .05);
+  --shadow-2: 0 2px 4px rgba(18, 33, 28, .10), 0 0 0 1px rgba(18, 33, 28, .05);
+  --shadow-pop: 0 8px 20px -8px rgba(12, 41, 33, .35), 0 0 0 1px rgba(18, 33, 28, .09);
+
+  /* --- Movimiento ------------------------------------------------------- */
+  --ease: cubic-bezier(.2, .7, .3, 1);
+  --dur-1: 110ms;
+  --dur-2: 190ms;
+  --dur-3: 320ms;
+
+  /* --- Estructura ------------------------------------------------------- */
+  --sidebar-w: 244px;
+  --topbar-h: 60px;
+  --content-max: 1320px;
+  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--azul);
+}
+
+/* Papel milimetrado: textura del fondo de trabajo. Se aplica con opacidad
+   muy baja para que se lea como cuaderno técnico y no como decoración. */
+.grid-paper {
+  background-image:
+    linear-gradient(to right,  rgba(18, 33, 28, .045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(18, 33, 28, .045) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-1: 0ms; --dur-2: 0ms; --dur-3: 0ms; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
