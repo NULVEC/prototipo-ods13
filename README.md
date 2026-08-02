@@ -37,14 +37,15 @@ Luego abra <http://localhost:8080>.
 
 ### Credenciales de demostración
 
-| Campo      | Valor                        |
-|------------|------------------------------|
-| Correo     | `ecoto70818@ufide.ac.cr`     |
-| Contraseña | cualquiera de 8+ caracteres  |
+No hay una cuenta real detrás: **cualquier correo con formato válido y una
+contraseña de ocho caracteres o más inician la sesión**.
 
-En la pantalla de inicio de sesión hay un botón **Completar con datos de
-demostración**. Si escribe otro correo, la pantalla muestra su estado de error,
-que también forma parte del prototipo.
+Para ver el estado de error de la pantalla, que también forma parte del
+prototipo, escriba `incorrecta` como contraseña.
+
+La sesión abre siempre con la misma cuenta ficticia de demostración
+(*Mariana Solís Vargas*, alias público *Yigüirro-418*), que es la que alimenta
+el historial, los gráficos y la comparativa.
 
 ---
 

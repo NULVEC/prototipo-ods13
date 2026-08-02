@@ -67,7 +67,7 @@ Screens.registro = {
               <div class="field">
                 <label for="r-nombre">Nombre completo <span class="req" aria-hidden="true">*</span></label>
                 <input class="input" id="r-nombre" name="nombre" type="text"
-                       autocomplete="name" placeholder="Eduardo Coto Astacio"
+                       autocomplete="name" placeholder="Nombre y apellidos"
                        data-reglas="requerido nombre" required>
               </div>
 
@@ -213,9 +213,9 @@ Screens.acceso = {
             <div class="notice notice-info" style="margin-bottom:var(--s-6)">
               ${Icon.get('info', 17)}
               <div>
-                <b>Prototipo de demostración.</b> Use
-                <span class="mono">ecoto70818@ufide.ac.cr</span> con cualquier contraseña de 8 o más
-                caracteres, o pulse el botón para completarlo automáticamente.
+                <b>Prototipo de demostración.</b> Cualquier correo con formato válido y una contraseña
+                de ocho caracteres o más inician la sesión. Para ver el estado de error, escriba
+                <span class="mono">incorrecta</span> como contraseña.
               </div>
             </div>
 
@@ -254,10 +254,6 @@ Screens.acceso = {
               <button class="btn btn-primary btn-block" type="submit" id="a-enviar">
                 ${Icon.get('salir', 17)}<span>Entrar</span>
               </button>
-
-              <button class="btn btn-ghost btn-block" type="button" id="a-demo" style="margin-top:var(--s-2)">
-                ${Icon.get('recargar', 16)}<span>Completar con datos de demostración</span>
-              </button>
             </form>
 
             <p class="auth-alt">
@@ -272,14 +268,6 @@ Screens.acceso = {
     const form = document.getElementById('form-acceso');
     const zonaError = document.getElementById('acceso-error');
     UI.validacionEnVivo(form);
-
-    document.getElementById('a-demo').addEventListener('click', () => {
-      form.correo.value = 'ecoto70818@ufide.ac.cr';
-      form.clave.value = 'ClimaCR2026';
-      UI.marcar(form.correo, null);
-      UI.marcar(form.clave, null);
-      form.querySelector('#a-enviar').focus();
-    });
 
     document.getElementById('a-olvide').addEventListener('click', e => {
       e.preventDefault();
@@ -305,20 +293,21 @@ Screens.acceso = {
 
       await UI.cargando(document.getElementById('a-enviar'), 950);
 
-      /* Credenciales simuladas: solo el correo de demostración autentica.
-         Así la pantalla muestra también su estado de error. */
-      const correoOk = form.correo.value.trim().toLowerCase() === 'ecoto70818@ufide.ac.cr';
-      if (!correoOk) {
+      /* Credenciales simuladas: entra cualquier correo con formato válido. Se
+         reserva una contraseña concreta para poder mostrar el estado de error
+         sin necesidad de exponer una cuenta real en la pantalla. */
+      const rechazado = form.clave.value.trim().toLowerCase() === 'incorrecta';
+      if (rechazado) {
         zonaError.hidden = false;
         zonaError.innerHTML = `
           <div class="notice notice-error" style="margin-bottom:var(--s-5)" role="alert">
             ${Icon.get('alertaCirculo', 17)}
             <div><b>No pudimos iniciar la sesión.</b> El correo o la contraseña no coinciden con
-            ninguna cuenta. Verifique el correo o cree una cuenta nueva.</div>
+            ninguna cuenta. Verifique los datos o cree una cuenta nueva.</div>
           </div>`;
         form.clave.value = '';
-        form.correo.focus();
-        UI.toast('Credenciales incorrectas', 'Revise el correo ingresado.', 'error');
+        form.clave.focus();
+        UI.toast('Credenciales incorrectas', 'Revise el correo y la contraseña.', 'error');
         return;
       }
 

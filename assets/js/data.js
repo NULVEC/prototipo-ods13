@@ -96,8 +96,8 @@ const DB = (() => {
   /* ------------------------------------------------------------------ */
   const usuario = {
     id: 'USR-00418',
-    nombre: 'Eduardo Coto Astacio',
-    correo: 'ecoto70818@ufide.ac.cr',
+    nombre: 'Mariana Solís Vargas',
+    correo: 'demo@ufide.ac.cr',
     alias: 'Yigüirro-418',
     provincia: 'San José',
     canton: 'Curridabat',
