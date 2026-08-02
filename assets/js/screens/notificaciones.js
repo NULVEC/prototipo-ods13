@@ -91,7 +91,7 @@ Screens.notificaciones = {
             <div class="panel-body">
               <p class="text-sm" style="color:var(--pine-on-dark)">
                 En la arquitectura propuesta, el backend envía estos avisos de forma automática
-                mediante SMTP. Pulse el botón para simular una ejecución del temporizador.
+                mediante SMTP. Tocá el botón para simular una corrida del temporizador.
               </p>
               <button class="btn btn-accent btn-block" type="button" id="n-disparar" style="margin-top:var(--s-4)">
                 ${Icon.get('campana', 16)}<span>Ejecutar ahora</span>
@@ -164,7 +164,7 @@ Screens.notificaciones = {
         origen: 'sistema', leida: false, fecha: new Date().toISOString(),
         titulo: pendiente ? 'Recordatorio: hoy no hay registros' : 'Corte del día generado',
         texto: pendiente
-          ? `Su racha de ${DB.racha()} días se mantiene si registra una acción antes de la medianoche.`
+          ? `Tu racha de ${DB.racha()} días se mantiene si registrás algo antes de la medianoche.`
           : `Hoy lleva ${DB.fmt.co2(DB.sumaCO2(DB.enUltimosDias(1)))} kg de CO₂e evitados. Buen cierre de jornada.`
       });
       UI.toast('Temporizador ejecutado', 'Se generó un aviso nuevo en la bandeja.', 'info');

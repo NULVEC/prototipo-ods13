@@ -107,11 +107,11 @@ const UI = (() => {
      control y se enlaza con aria-describedby.
      ================================================================== */
   const reglas = {
-    requerido: v => v.trim() ? null : 'Este campo es obligatorio.',
-    correo: v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) ? null : 'Escriba un correo con formato válido, por ejemplo nombre@ufide.ac.cr.',
-    clave: v => v.length >= 8 ? null : 'La contraseña debe tener al menos 8 caracteres.',
-    numero: v => (v !== '' && !isNaN(v) && +v > 0) ? null : 'Escriba una cantidad mayor que cero.',
-    nombre: v => v.trim().split(/\s+/).length >= 2 ? null : 'Escriba nombre y al menos un apellido.'
+    requerido: v => v.trim() ? null : 'Este campo no puede quedar vacío.',
+    correo: v => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(v.trim()) ? null : 'Ese correo no tiene buena pinta. Debe ser algo como nombre@ufide.ac.cr.',
+    clave: v => v.length >= 8 ? null : 'La contraseña necesita al menos 8 caracteres.',
+    numero: v => (v !== '' && !isNaN(v) && +v > 0) ? null : 'Poné un número mayor que cero.',
+    nombre: v => v.trim().split(/\s+/).length >= 2 ? null : 'Escribí tu nombre y al menos un apellido.'
   };
 
   /** Marca un campo como válido o inválido y devuelve si pasó. */
@@ -153,10 +153,10 @@ const UI = (() => {
       }
       if (!error && campo.dataset.igual) {
         const otro = form.querySelector(campo.dataset.igual);
-        if (otro && otro.value !== campo.value) error = 'Las contraseñas no coinciden.';
+        if (otro && otro.value !== campo.value) error = 'Las dos contraseñas no son iguales.';
       }
       if (!error && campo.type === 'checkbox' && campo.required && !campo.checked) {
-        error = 'Debe aceptar para continuar.';
+        error = 'Hay que aceptar para seguir.';
       }
       if (error) { ok = false; primero = primero || campo; }
       marcar(campo, error);
@@ -175,7 +175,7 @@ const UI = (() => {
         for (const r of lista) { error = reglas[r] ? reglas[r](campo.value) : null; if (error) break; }
         if (!error && campo.dataset.igual) {
           const otro = form.querySelector(campo.dataset.igual);
-          if (otro && otro.value !== campo.value) error = 'Las contraseñas no coinciden.';
+          if (otro && otro.value !== campo.value) error = 'Las dos contraseñas no son iguales.';
         }
         marcar(campo, error);
       });

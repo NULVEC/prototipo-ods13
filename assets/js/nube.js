@@ -64,18 +64,18 @@ const MENSAJES = {
   'auth/invalid-credential':    'El correo o la contraseña no coinciden con ninguna cuenta.',
   'auth/wrong-password':        'La contraseña no es correcta.',
   'auth/user-not-found':        'No hay ninguna cuenta registrada con ese correo.',
-  'auth/user-disabled':         'Esta cuenta está deshabilitada. Escriba al administrador del sistema.',
+  'auth/user-disabled':         'Esta cuenta está deshabilitada. Escribile al administrador del sistema.',
   'auth/too-many-requests':     'Demasiados intentos seguidos. Espere unos minutos antes de reintentar.',
-  'auth/network-request-failed':'No hay conexión con el servidor. Revise su red e intente de nuevo.',
+  'auth/network-request-failed':'No hay conexión con el servidor. Revisá tu red y probá de nuevo.',
   'auth/requires-recent-login': 'Por seguridad, vuelva a iniciar sesión antes de hacer este cambio.',
   'auth/operation-not-allowed': 'El acceso por correo y contraseña no está habilitado en el proyecto de Firebase.',
   'auth/configuration-not-found':
     'Falta activar Authentication en el proyecto de Firebase y habilitar el proveedor de correo y contraseña.',
   'auth/unauthorized-domain':
     'Este dominio no está autorizado en Firebase Authentication. Agréguelo en Authentication → Settings → Authorized domains.',
-  'auth/api-key-not-valid': 'La clave de API del proyecto no es válida. Revise la configuración en nube.js.',
+  'auth/api-key-not-valid': 'La clave de API del proyecto no sirve. Hay que revisar la configuración en nube.js.',
   'permission-denied':          'Las reglas de seguridad no permiten esta operación.',
-  'unavailable':                'No hay conexión con la base de datos. Sus cambios se guardarán al reconectar.',
+  'unavailable':                'No hay conexión con la base de datos. Tus cambios se guardan apenas vuelva.',
   'failed-precondition':        'La base de datos de Firestore todavía no está creada en el proyecto.'
 };
 

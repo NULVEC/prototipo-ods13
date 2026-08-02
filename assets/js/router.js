@@ -150,6 +150,10 @@ const Router = (() => {
     if (cfg.publico && DB.state.autenticado) { ir('/inicio'); return; }
 
     Charts.destruirTodo();
+    /* Libera los contextos WebGL antes de cambiar de pantalla. El navegador
+       solo permite unos pocos a la vez, y uno abandonado no se recupera. */
+    window.Vistas3D?.destruirTodo();
+    Fiesta.limpiar();
     document.body.classList.remove('nav-open');
 
     const pantalla = Screens[cfg.pantalla];
@@ -161,6 +165,8 @@ const Router = (() => {
 
     conectarGlobales();
     pantalla.mount?.();
+    Fiesta.contarTodo();
+    Presentacion.actualizar();
 
     window.scrollTo({ top: 0 });
     // Se anuncia el cambio de pantalla a los lectores de pantalla.
@@ -183,7 +189,7 @@ const Router = (() => {
       if (DB.state.modo === 'nube' && window.Nube && DB.state.uid) {
         try {
           await Nube.salir();   // `onAuthStateChanged` limpia y redibuja
-          UI.toast('Sesión cerrada', 'Sus registros quedan guardados en su cuenta.', 'info');
+          UI.toast('Sesión cerrada', 'Tus registros quedan guardados en tu cuenta.', 'info');
           return;
         } catch (err) {
           UI.toast('No se pudo cerrar la sesión', Nube.traducir(err), 'error');
@@ -193,7 +199,7 @@ const Router = (() => {
       DB.state.autenticado = false;
       DB.persistir();
       ir('/acceso');
-      UI.toast('Sesión cerrada', 'Sus registros quedan guardados en este dispositivo.', 'info');
+      UI.toast('Sesión cerrada', 'Tus registros quedan guardados en este dispositivo.', 'info');
     }));
 
     UI.conectarRevelar();
@@ -204,6 +210,7 @@ const Router = (() => {
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') document.body.classList.remove('nav-open');
     });
+    Presentacion.iniciar();
     resolver();
   }
 

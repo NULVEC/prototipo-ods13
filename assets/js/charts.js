@@ -197,7 +197,7 @@ const Charts = (() => {
       data: {
         labels: serieYo.map(s => s.etiqueta),
         datasets: [
-          { label: 'Usted', data: acumYo, borderColor: PALETA.azul, borderWidth: 2.5,
+          { label: 'Vos', data: acumYo, borderColor: PALETA.azul, borderWidth: 2.5,
             pointRadius: 0, pointHoverRadius: 4, tension: .3 },
           { label: 'Promedio de la comunidad', data: acumCom, borderColor: PALETA.tinta3,
             borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 4, tension: .3 }

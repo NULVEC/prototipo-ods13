@@ -1,13 +1,17 @@
 /* ============================================================================
    screens/accion.js — UC4 Registrar acción sostenible.
 
-   El panel de cálculo a la derecha muestra la fórmula completa mientras el
-   usuario escribe: cantidad × factor de emisión = CO₂e evitado. Ver la
+   El panel de cálculo a la derecha muestra la fórmula completa mientras la
+   persona escribe: cantidad × factor de emisión = CO₂ evitado. Ver la
    fórmula, y no solo el resultado, es lo que convierte el registro en
    educación ambiental.
 
    Aquí también se materializa la relación «extend» del Avance 3: al guardar
    una acción, si se alcanza una meta, se otorga la insignia (UC7).
+
+   Y aquí es donde la aplicación celebra. Guardar un registro es el momento en
+   que alguien hizo algo bien; si la interfaz responde con un renglón gris, el
+   hábito no se refuerza. De ahí el confeti y el número que sube.
    ========================================================================= */
 
 Screens.accion = {
@@ -21,14 +25,14 @@ Screens.accion = {
         <div class="panel">
           <div class="panel-head">
             ${Icon.get('accion', 18)}
-            <h3>Nueva acción sostenible</h3>
+            <h3>¿Qué hiciste hoy?</h3>
             <span class="tag tag-pine">UC4</span>
           </div>
 
           <form class="panel-body" id="form-accion" novalidate>
 
             <fieldset style="border:0;padding:0;margin:0 0 var(--s-6)">
-              <legend class="field-label" style="padding:0">Categoría de la acción</legend>
+              <legend class="field-label" style="padding:0">¿De qué tipo?</legend>
               <div class="choice-grid" role="radiogroup" aria-label="Categoría de la acción">
                 ${cats.map((c, i) => `
                   <label class="choice">
@@ -44,7 +48,7 @@ Screens.accion = {
             </fieldset>
 
             <div class="field">
-              <label for="ac-tipo">Tipo de acción</label>
+              <label for="ac-tipo">¿Qué exactamente?</label>
               <select class="select" id="ac-tipo" name="tipo"></select>
               <span class="hint" id="ac-factor"></span>
             </div>
@@ -61,22 +65,22 @@ Screens.accion = {
               </div>
 
               <div class="field">
-                <label for="ac-fecha">Fecha</label>
+                <label for="ac-fecha">¿Cuándo?</label>
                 <input class="input" id="ac-fecha" name="fecha" type="date" value="${hoy}" max="${hoy}">
-                <span class="hint">Puede registrar acciones de días anteriores.</span>
+                <span class="hint">También podés registrar días pasados.</span>
               </div>
             </div>
 
             <div class="field">
               <label for="ac-nota">Nota <span class="muted" style="font-weight:400">(opcional)</span></label>
               <textarea class="textarea" id="ac-nota" name="nota" maxlength="180"
-                        placeholder="Por ejemplo: entrega mensual en el centro de acopio de Curridabat."></textarea>
+                        placeholder="Por ejemplo: llevé las latas al centro de acopio de Curridabat."></textarea>
               <span class="hint"><span id="ac-cuenta">0</span>/180 caracteres</span>
             </div>
 
             <div style="display:flex;gap:var(--s-3);flex-wrap:wrap">
               <button class="btn btn-primary" type="submit" id="ac-guardar">
-                ${Icon.get('guardar', 17)}<span>Guardar acción</span>
+                ${Icon.get('guardar', 17)}<span>¡Guardar!</span>
               </button>
               <button class="btn" type="reset" id="ac-limpiar">
                 ${Icon.get('recargar', 16)}<span>Limpiar</span>
@@ -89,32 +93,32 @@ Screens.accion = {
         <aside>
           <div class="calc">
             <div class="calc-head">
-              <span class="label-micro">Cálculo en tiempo real</span>
+              <span class="label-micro">Se calcula mientras escribís</span>
             </div>
 
             <div class="calc-value" id="calc-valor">
               <span class="n" id="calc-n">0,00</span>
-              <span class="u">kg de CO₂e evitados</span>
+              <span class="u">kg de CO₂ que no se van al aire</span>
             </div>
 
             <div class="calc-formula">
               <div class="row"><span>Cantidad</span><b id="f-cant">—</b></div>
               <div class="row"><span>Factor de emisión</span><b id="f-factor">—</b></div>
-              <div class="row is-total"><span>CO₂e evitado</span><b id="f-total">0,00 kg</b></div>
+              <div class="row is-total"><span>CO₂ evitado</span><b id="f-total">0,00 kg</b></div>
             </div>
 
             <div class="calc-equiv">
               ${Icon.get('info', 16)}
-              <span id="calc-equiv">Complete el formulario para ver el cálculo.</span>
+              <span id="calc-equiv">Llená el formulario y aquí aparece el cálculo.</span>
             </div>
           </div>
 
           <div class="notice notice-warn" style="margin-top:var(--s-5)">
             ${Icon.get('alerta', 17)}
             <div>
-              <b>Sobre el factor eléctrico.</b> La matriz eléctrica del país es casi totalmente
-              renovable, por lo que ahorrar un kWh evita aquí muy poco CO₂. El beneficio real de
-              esa categoría está en reducir la demanda pico y la presión sobre los embalses.
+              <b>Ojo con la electricidad.</b> Casi toda la electricidad del país es renovable,
+              así que ahorrar un kWh evita aquí muy poco CO₂. Lo que sí sirve de esa categoría
+              es bajar la demanda pico y la presión sobre los embalses.
             </div>
           </div>
         </aside>
@@ -187,7 +191,7 @@ Screens.accion = {
     form.addEventListener('submit', async e => {
       e.preventDefault();
       if (!UI.validar(form)) {
-        UI.toast('Falta la cantidad', 'Escriba un valor mayor que cero para calcular el CO₂e.', 'error');
+        UI.toast('Te falta la cantidad', 'Poné un número mayor que cero para poder calcular.', 'error');
         return;
       }
 
@@ -200,6 +204,11 @@ Screens.accion = {
       const reg = DB.agregarRegistro(datos);
 
       const nuevas = DB.logros().filter(l => l.obtenida && !antes.has(l.id));
+
+      /* El confeti sale del botón que se acaba de pulsar, no del centro de la
+         pantalla: así el efecto queda ligado al gesto que lo produjo. */
+      const btn = document.getElementById('ac-guardar').getBoundingClientRect();
+      const origen = { x: btn.left + btn.width / 2, y: btn.top };
 
       form.reset();
       limpiarEstados();
@@ -214,12 +223,15 @@ Screens.accion = {
           etiqueta: `Insignia desbloqueada: ${ins.nombre}`,
           cuerpo: `
             <div class="modal-seal">
-              <span class="seal is-${ins.tono}">${Icon.get(ins.icono, 32, 1.8)}</span>
+              <span class="seal is-${ins.tono} sello-brinca">${Icon.get(ins.icono, 32, 1.8)}</span>
             </div>
             <div style="text-align:center">
-              <span class="label-micro">Insignia desbloqueada</span>
+              <span class="label-micro">¡Insignia desbloqueada!</span>
               <h2 style="margin:var(--s-2) 0 var(--s-3)">${UI.esc(ins.nombre)}</h2>
               <p class="muted text-sm">${UI.esc(ins.criterio)}</p>
+              ${nuevas.length > 1
+                ? `<p class="text-sm" style="margin-top:var(--s-3)">
+                     …y ${nuevas.length - 1} más de una sola vez.</p>` : ''}
             </div>`,
           acciones: [
             { texto: 'Seguir registrando', clase: 'btn-ghost' },
@@ -227,9 +239,13 @@ Screens.accion = {
               onClick: () => Router.ir('/insignias') }
           ]
         });
+        // Una insignia merece el doble de confeti, y desde el centro.
+        Fiesta.confeti({ cantidad: 170 });
+        setTimeout(() => Fiesta.confeti({ cantidad: 110 }), 260);
       } else {
-        UI.toast('Acción registrada',
-          `${DB.fmt.co2(reg.co2)} kg de CO₂e evitados el ${DB.fmt.fechaCorta(reg.fecha)}.`);
+        Fiesta.confeti({ origen, cantidad: 80 });
+        UI.toast('¡Listo!',
+          `Esos ${DB.fmt.co2(reg.co2)} kg de CO₂ no se fueron al aire el ${DB.fmt.fechaCorta(reg.fecha)}.`);
         /* El foco vuelve a la cantidad solo si no se abrió la ventana de
            insignia: si no, al perderlo se marcaría el campo vacío como error. */
         cant.focus();

@@ -159,6 +159,9 @@
 .podium .who { padding-top: var(--s-3); border-top: 1px solid var(--line-strong); }
 .podium .who b { display: block; font-size: var(--t-sm); font-weight: 600; }
 .podium .who span { font-family: var(--font-mono); font-size: var(--t-sm); color: var(--ink-3); }
+/* Podio plano de reserva (sin WebGL): la columna propia se resalta igual. */
+.podium .step.is-me .stand { outline: 2px solid var(--azul); outline-offset: 2px; }
+.podium .step.is-me .who b { color: var(--azul-700); }
 
 .rank-me {
   display: flex; align-items: center; gap: var(--s-4);
@@ -216,4 +219,265 @@
   .report-head { padding: var(--s-5); }
   .dl { grid-template-columns: minmax(0, 1fr); gap: var(--s-1); }
   .dl dd { margin-bottom: var(--s-3); }
+}
+
+/* ==========================================================================
+   ESCENAS TRIDIMENSIONALES
+   Tres escenas comparten este armazón: el bosque y el cubo de CO₂ en UC3, y
+   el podio de la comunidad en UC8. Son los momentos de la aplicación pensados
+   para explicarse en voz alta: la escena a la izquierda, la cifra a la
+   derecha, y al pie la instrucción de que se puede girar.
+   ========================================================================== */
+
+.escena-panel { overflow: hidden; }
+
+.escena-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(240px, 1fr);
+}
+/* El bosque necesita más lienzo: la gracia es ver la masa de árboles. */
+.escena-grid.is-bosque { grid-template-columns: minmax(0, 2fr) minmax(230px, 1fr); }
+
+.escena-lienzo {
+  position: relative;
+  min-height: 400px;
+  background: var(--pine-900);
+  display: grid; place-items: center;
+}
+.escena-lienzo.is-alto  { min-height: 460px; }
+.escena-lienzo.is-podio { min-height: 420px; }
+.escena-lienzo canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.escena-cargando {
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(194, 211, 203, .5); margin: 0;
+}
+
+.escena-sin3d {
+  padding: var(--s-8); text-align: center; color: var(--pine-on-dark);
+  max-width: 46ch;
+}
+.escena-sin3d svg { margin: 0 auto var(--s-4); color: var(--azul-bright); }
+.escena-sin3d p { font-size: var(--t-sm); margin: 0; }
+.escena-sin3d b { color: #eef2ee; }
+
+.escena-datos {
+  padding: var(--s-6) var(--s-6);
+  border-left: 1px solid rgba(194, 211, 203, .16);
+  display: flex; flex-direction: column; justify-content: center;
+}
+.escena-datos .label-micro { color: rgba(194, 211, 203, .55); }
+.escena-cifra {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 3rem; font-weight: 600; line-height: 1; letter-spacing: -.03em;
+  color: #f2f5f1; margin: var(--s-3) 0 var(--s-2);
+}
+.escena-cifra .u { font-size: .34em; color: var(--azul-bright); margin-left: 6px; }
+.escena-lado { font-size: var(--t-sm); color: var(--pine-on-dark); margin: 0 0 var(--s-5); }
+.escena-lado b { color: var(--azul-bright); font-family: var(--font-mono); }
+
+.escena-equiv {
+  list-style: none; margin: 0 0 var(--s-5); padding: 0;
+  border-top: 1px solid rgba(194, 211, 203, .16);
+}
+.escena-equiv li {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) 0; font-size: var(--t-sm); color: var(--pine-on-dark);
+  border-bottom: 1px solid rgba(194, 211, 203, .1);
+}
+.escena-equiv svg { flex: none; color: var(--azul-bright); }
+.escena-equiv b { margin-left: auto; color: #f2f5f1; }
+
+/* Punto de color que ata cada categoría con el color de su copa en el bosque. */
+.escena-equiv .punto {
+  flex: none; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent);
+}
+
+.escena-nota {
+  font-size: var(--t-micro); line-height: 1.6;
+  color: rgba(194, 211, 203, .6); margin: 0;
+}
+
+.escena-pie { background: rgba(194, 211, 203, .06); border-top-color: rgba(194, 211, 203, .16);
+  color: rgba(194, 211, 203, .68); }
+
+/* Distintivo "3D" en la cabecera de los paneles que llevan escena. */
+.tag-3d {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: linear-gradient(100deg, var(--azul) 0%, #2f7d5f 100%);
+  color: #eaf2ff; border-color: transparent; letter-spacing: .08em;
+}
+
+/* --------------------------------------------------------------------------
+   Etiquetas del podio: HTML colocado sobre el lienzo, siguiendo la proyección
+   de cada columna. No se dibujan en 3D para no cargar una fuente y para que
+   se lean nítidas en un proyector.
+   ----------------------------------------------------------------------- */
+.podio-capa {
+  position: absolute; inset: 0;
+  pointer-events: none;             /* el arrastre de la cámara manda */
+  overflow: hidden;
+}
+.podio-etiqueta {
+  position: absolute; top: 0; left: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: var(--s-2) var(--s-3);
+  background: rgba(8, 26, 21, .82);
+  border: 1px solid rgba(194, 211, 203, .2);
+  border-radius: var(--r-md);
+  backdrop-filter: blur(3px);
+  white-space: nowrap;
+  transition: opacity var(--dur-1) linear;
+}
+.podio-etiqueta .p {
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  color: rgba(194, 211, 203, .6);
+}
+.podio-etiqueta b { font-size: var(--t-sm); color: #f2f5f1; }
+.podio-etiqueta .kg {
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  color: var(--azul-bright);
+}
+.podio-etiqueta.is-yo {
+  background: rgba(29, 78, 155, .88);
+  border-color: var(--azul-bright);
+  box-shadow: 0 0 0 1px var(--azul-bright), 0 6px 18px -6px rgba(0, 0, 0, .7);
+}
+.podio-etiqueta.is-yo .p, .podio-etiqueta.is-yo .kg { color: #cfe1ff; }
+
+/* Veredicto del podio: el "cómo vas" en la cabecera del panel. */
+.presenta-veredicto {
+  margin-left: auto; font-size: var(--t-sm);
+  color: var(--azul-bright); font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .escena-grid, .escena-grid.is-bosque { grid-template-columns: minmax(0, 1fr); }
+  .escena-lienzo { min-height: 300px; }
+  .escena-lienzo.is-alto, .escena-lienzo.is-podio { min-height: 330px; }
+  .escena-datos { border-left: 0; border-top: 1px solid rgba(194, 211, 203, .16); padding: var(--s-5); }
+  .escena-cifra { font-size: 2.25rem; }
+  .presenta-veredicto { margin-left: 0; flex-basis: 100%; }
+  .podio-etiqueta { padding: 5px 7px; }
+  .podio-etiqueta b { font-size: var(--t-micro); }
+}
+
+/* ==========================================================================
+   CELEBRACIÓN
+   El confeti y el pulso de los números. Ver `fiesta.js`: nada de esto se
+   ejecuta si la persona pidió que la pantalla no se mueva.
+   ========================================================================== */
+
+.confeti-lienzo {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 140;                     /* por encima de la modal de insignia */
+}
+
+@keyframes pulsa {
+  0%   { transform: scale(1);    }
+  40%  { transform: scale(1.09); }
+  100% { transform: scale(1);    }
+}
+.pulsa { animation: pulsa 420ms var(--ease); }
+
+/* El sello de la insignia entra brincando: es el premio, tiene que notarse. */
+@keyframes selloBrinca {
+  0%   { transform: scale(.3) rotate(-14deg); opacity: 0; }
+  55%  { transform: scale(1.12) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0);       opacity: 1; }
+}
+.sello-brinca { animation: selloBrinca 560ms var(--ease) both; }
+
+/* La llama va junto al rótulo, no encima de la línea base. */
+.home-head .streak .label-micro {
+  display: inline-flex; align-items: center; gap: 5px;
+}
+
+/* Racha en llamas: a partir de una semana, el contador se enciende. Se usa la
+   brasa clara porque el rótulo va sobre pino oscuro y la brasa normal no
+   alcanza contraste suficiente ahí. */
+.streak.is-fuego .n,
+.streak.is-fuego .label-micro,
+.streak.is-fuego .label-micro svg { color: var(--ember-bright); }
+
+/* ==========================================================================
+   MODO PRESENTACIÓN
+   Barra fija al pie con el caso de uso actual y el que sigue. Solo aparece
+   cuando el modo está activo (`body.presentando`). Ver `presentacion.js`.
+   ========================================================================== */
+
+.presenta-barra {
+  position: fixed; left: 50%; bottom: var(--s-5);
+  transform: translateX(-50%);
+  z-index: 100;                     /* sobre la barra lateral, bajo los avisos */
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  max-width: calc(100vw - var(--s-8));
+  background: var(--pine-900); color: var(--pine-on-dark);
+  border: 1px solid var(--pine-700);
+  border-radius: 999px;
+  box-shadow: var(--shadow-pop);
+}
+
+.presenta-btn {
+  flex: none;
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  background: rgba(194, 211, 203, .1);
+  color: #eef2ee;
+  border: 0; border-radius: 50%;
+  cursor: pointer;
+  transition: background var(--dur-1) var(--ease);
+}
+.presenta-btn:hover { background: var(--azul); }
+.presenta-btn:focus-visible { outline: 2px solid var(--azul-bright); outline-offset: 2px; }
+.presenta-cerrar { background: transparent; color: rgba(194, 211, 203, .55); }
+.presenta-cerrar:hover { background: var(--ember); color: #fff; }
+
+.presenta-centro {
+  display: flex; align-items: center; gap: var(--s-2);
+  min-width: 0;
+}
+.presenta-centro b {
+  color: #f2f5f1; font-size: var(--t-sm);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.presenta-uc {
+  flex: none;
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  padding: 2px 6px; border-radius: var(--r-xs);
+  background: var(--azul); color: #eaf2ff;
+}
+.presenta-cuenta {
+  flex: none;
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  color: rgba(194, 211, 203, .55);
+}
+
+.presenta-puntos { display: flex; gap: 5px; flex: none; }
+.presenta-puntos i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(194, 211, 203, .28);
+  transition: background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.presenta-puntos i.is-aqui { background: var(--azul-bright); transform: scale(1.5); }
+
+.presenta-proximo {
+  flex: none;
+  font-size: var(--t-micro); color: rgba(194, 211, 203, .5);
+  padding-left: var(--s-3); border-left: 1px solid rgba(194, 211, 203, .18);
+}
+.presenta-proximo b { color: rgba(194, 211, 203, .85); font-weight: 500; }
+
+/* El caso de uso se resalta mientras se presenta: es lo que se está mostrando.
+   Y el contenido deja sitio abajo para que la barra no tape la última fila. */
+body.presentando .topbar .uc-tag { background: var(--azul); color: #eaf2ff; border-color: var(--azul); }
+body.presentando .content { padding-bottom: 96px; }
+
+@media (max-width: 860px) {
+  .presenta-proximo, .presenta-puntos { display: none; }
+  .presenta-barra { bottom: var(--s-3); gap: var(--s-2); }
 }

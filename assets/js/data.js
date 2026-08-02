@@ -225,9 +225,9 @@ const DB = (() => {
   ];
 
   const consejos = [
-    { titulo: 'Separe el aluminio aparte', texto: 'Reciclar un kilo de aluminio evita alrededor de 8 kg de CO₂e: es, por peso, el material con mayor retorno ambiental de todos los que se recolectan.' },
+    { titulo: 'Separá el aluminio aparte', texto: 'Reciclar un kilo de aluminio evita alrededor de 8 kg de CO₂e: es, por peso, el material con mayor retorno ambiental de todos los que se recolectan.' },
     { titulo: 'Los viajes cortos pesan más', texto: 'Un motor frío consume hasta un 30 % más en los primeros kilómetros. Sustituir un trayecto de 3 km por caminata rinde más de lo que sugiere la distancia.' },
-    { titulo: 'Revise el medidor de agua', texto: 'Cierre todas las llaves y observe el medidor por diez minutos. Si avanza, hay una fuga: repararla puede ahorrar varios metros cúbicos al mes.' },
+    { titulo: 'Revisá el medidor de agua', texto: 'Cerrá todas las llaves y quedate viendo el medidor diez minutos. Si avanza, hay una fuga: arreglarla puede ahorrar varios metros cúbicos al mes.' },
     { titulo: 'El compost cierra el ciclo', texto: 'Los residuos orgánicos en relleno sanitario generan metano. Compostarlos en casa evita esa emisión y produce abono.' }
   ];
 
@@ -275,8 +275,8 @@ const DB = (() => {
         titulo: 'Faltan 8 días para cerrar el mes',
         texto: 'Va en 31,2 kg de 45 kg de su meta mensual. Necesita cerca de 1,7 kg diarios para alcanzarla.' },
       { id: 'N-5', tipo: 'alerta', origen: 'sistema', leida: true, fecha: h(5, '11:30'),
-        titulo: 'Revise la cantidad de un registro',
-        texto: 'El registro RA-1043 declara 148 kg de papel reciclado en un día. Confirme la cantidad o corríjala.' },
+        titulo: 'Revisá la cantidad de un registro',
+        texto: 'El registro RA-1043 dice 148 kg de papel reciclado en un solo día. Confirmá la cantidad o corregila.' },
       { id: 'N-6', tipo: 'logro', origen: 'sistema', leida: true, fecha: h(9, '16:45'),
         titulo: 'Insignia obtenida: Cien kilos',
         texto: 'Superó los 100 kg de CO₂e evitados desde que creó la cuenta.' },
@@ -675,7 +675,7 @@ const DB = (() => {
 
   /* Equivalencias para volver tangible el CO2 (usado en UC4 y UC9). */
   function equivalencia(kg) {
-    if (kg <= 0) return 'Complete el formulario para ver el cálculo.';
+    if (kg <= 0) return 'Llená el formulario y aquí aparece el cálculo.';
     const km = kg / 0.192;
     const arboles = kg / 21;      // 1 árbol maduro absorbe ~21 kg CO2 al año
     const cargas = kg / 0.0084;   // carga de un teléfono ≈ 8,4 g CO2e

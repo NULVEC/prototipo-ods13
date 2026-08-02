@@ -47,7 +47,7 @@ Screens.registro = {
           resaltado: 'no se reduce.',
           texto: 'Cree una cuenta para registrar sus acciones sostenibles y ver, en kilogramos, el CO₂ que deja de emitir cada semana.',
           puntos: [
-            { icono: 'reciclaje',  texto: 'Registre reciclaje, transporte, energía y agua' },
+            { icono: 'reciclaje',  texto: 'Registrá reciclaje, transporte, energía y agua' },
             { icono: 'progreso',   texto: 'Vea el cálculo del CO₂e con la fórmula a la vista' },
             { icono: 'escudo',     texto: 'Compare su avance sin exponer su identidad' }
           ],
@@ -170,10 +170,10 @@ Screens.registro = {
       const tmsg = document.getElementById('r-terminos-msg');
       const tOk = t.checked;
       t.closest('.field').classList.toggle('is-invalid', !tOk);
-      tmsg.innerHTML = tOk ? '' : Icon.get('alertaCirculo', 14) + '<span>Debe aceptar para continuar.</span>';
+      tmsg.innerHTML = tOk ? '' : Icon.get('alertaCirculo', 14) + '<span>Hay que aceptar para seguir.</span>';
 
       if (!ok || !tOk) {
-        UI.toast('Revise el formulario', 'Hay campos que necesitan corrección.', 'error');
+        UI.toast('Revisá el formulario', 'Hay campos que arreglar.', 'error');
         return;
       }
 
@@ -231,11 +231,11 @@ Screens.acceso = {
     return `
       <div class="auth-shell">
         ${panelAcceso({
-          titulo: 'Su huella,',
+          titulo: 'Tu huella,',
           resaltado: 'medida cada día.',
           texto: 'Retome el seguimiento donde lo dejó. La cinta de carbono conserva los últimos noventa días de actividad.',
           puntos: [
-            { icono: 'reloj',     texto: 'Su racha y su meta del mes, al abrir' },
+            { icono: 'reloj',     texto: 'Tu racha y tu meta del mes, apenas abrís' },
             { icono: 'insignia',  texto: 'Las insignias que lleva ganadas' },
             { icono: 'reporte',   texto: 'El reporte de emisiones, siempre al día' }
           ],
@@ -248,7 +248,7 @@ Screens.acceso = {
           <div class="auth-form-wrap">
             <div class="auth-head">
               <h2>Iniciar sesión</h2>
-              <p>Ingrese con el correo que registró en la plataforma.</p>
+              <p>Entrá con el correo con el que te registraste.</p>
             </div>
 
             ${DB.state.modo === 'nube' ? `
@@ -335,17 +335,17 @@ Screens.acceso = {
               const correo = document.getElementById('m-correo').value.trim();
               if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(correo)) {
                 document.getElementById('m-correo').closest('.field').classList.add('is-invalid');
-                UI.toast('Correo no válido', 'Escriba una dirección con formato correcto.', 'error');
+                UI.toast('Ese correo no sirve', 'Escribí una dirección con el formato correcto.', 'error');
                 return false;     // mantiene la ventana abierta
               }
               if (DB.state.modo === 'nube' && window.Nube) {
                 Nube.recuperarClave(correo)
                   .then(() => UI.toast('Enlace enviado',
-                    'Revise su bandeja de entrada y la carpeta de no deseados.', 'info'))
+                    'Revisá tu bandeja de entrada y la carpeta de no deseados.', 'info'))
                   .catch(e => UI.toast('No se pudo enviar', Nube.traducir(e), 'error', 7000));
               } else {
                 UI.toast('Enlace enviado',
-                  'Revise su bandeja de entrada y la carpeta de no deseados.', 'info');
+                  'Revisá tu bandeja de entrada y la carpeta de no deseados.', 'info');
               }
             } }
         ]

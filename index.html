@@ -55,6 +55,7 @@
   <script src="assets/js/data.js"></script>
   <script src="assets/js/ui.js"></script>
   <script src="assets/js/charts.js"></script>
+  <script src="assets/js/fiesta.js"></script>
 
   <!-- Una pantalla por caso de uso (UC1 a UC10) -->
   <script src="assets/js/screens/auth.js"></script>
@@ -67,14 +68,23 @@
   <script src="assets/js/screens/reporte.js"></script>
   <script src="assets/js/screens/perfil.js"></script>
 
-  <!-- Enrutador y arranque -->
+  <!-- Enrutador, modo presentación y arranque -->
   <script src="assets/js/router.js"></script>
+  <script src="assets/js/presentacion.js"></script>
   <script src="assets/js/app.js"></script>
 
-  <!-- Capa de Firebase. Es el único módulo ES del proyecto y, por serlo, se
-       ejecuta después de todos los scripts anteriores: para entonces DB, UI,
-       Router y Aplicacion ya existen. Es también quien arranca la aplicación
-       una vez que sabe si hay sesión. -->
+  <!-- Escenas tridimensionales. Van antes que nube.js porque los módulos se
+       ejecutan en el orden en que aparecen y la aplicación arranca desde
+       nube.js: para entonces window.Escena3D, Bosque3D y Podio3D ya existen.
+       Las tres importan `vista3d.js`, que a su vez importa three.js una sola
+       vez: el navegador descarga y evalúa el módulo una vez y lo reutiliza. -->
+  <script type="module" src="assets/js/escena3d.js"></script>
+  <script type="module" src="assets/js/bosque3d.js"></script>
+  <script type="module" src="assets/js/podio3d.js"></script>
+
+  <!-- Capa de Firebase. Se ejecuta después de todos los scripts anteriores:
+       para entonces DB, UI, Router y Aplicacion ya existen. Es también quien
+       arranca la aplicación una vez que sabe si hay sesión. -->
   <script type="module" src="assets/js/nube.js"></script>
 </body>
 </html>

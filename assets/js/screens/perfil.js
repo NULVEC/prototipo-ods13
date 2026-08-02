@@ -125,7 +125,7 @@ Screens.perfil = {
                 <span class="text-sm">Mostrar mi provincia en la tabla de la comunidad</span>
               </label>
               <p class="text-sm muted" style="margin-top:var(--s-4);margin-bottom:0">
-                Su nombre y su correo nunca se muestran a otras personas usuarias.
+                Tu nombre y tu correo nunca se le muestran a nadie más.
               </p>
             </div>
           </div>
@@ -150,9 +150,9 @@ Screens.perfil = {
           </div>
 
           <div class="panel">
-            <div class="panel-head">${Icon.get('descargar', 18)}<h3>Sus datos</h3></div>
+            <div class="panel-head">${Icon.get('descargar', 18)}<h3>Tus datos</h3></div>
             <div class="panel-body">
-              <p class="text-sm">Puede descargar todos sus registros en formato JSON para conservarlos
+              <p class="text-sm">Podés descargar todos tus registros en formato JSON para guardarlos
               o migrarlos a otra plataforma.</p>
               <button class="btn btn-block" type="button" id="p-exportar">
                 ${Icon.get('descargar', 16)}<span>Exportar mis registros</span>
@@ -192,7 +192,7 @@ Screens.perfil = {
     form.addEventListener('submit', async e => {
       e.preventDefault();
       if (!UI.validar(form)) {
-        UI.toast('Revise los datos', 'Hay campos que necesitan corrección.', 'error');
+        UI.toast('Revisá los datos', 'Hay campos que arreglar.', 'error');
         return;
       }
       await UI.cargando(document.getElementById('p-guardar'), 900);
@@ -207,7 +207,7 @@ Screens.perfil = {
       if (correoNuevo && DB.state.modo === 'nube' && window.Nube) {
         try {
           await Nube.cambiarCorreo(d.correo.trim());
-          UI.toast('Confirme el correo nuevo',
+          UI.toast('Confirmá el correo nuevo',
             'Se envió un enlace a ' + d.correo.trim() + '. El cambio se aplica al abrirlo.',
             'info', 9000);
         } catch (err) {
@@ -277,12 +277,12 @@ Screens.perfil = {
           <p>Esta acción borra de forma permanente ${DB.state.registros.length} registros,
              ${DB.logros().filter(l => l.obtenida).length} insignias y todo su historial.</p>
           <div class="field" style="margin-top:var(--s-4)">
-            <label for="del-conf">Escriba <b class="mono">ELIMINAR</b> para confirmar</label>
+            <label for="del-conf">Escribí <b class="mono">ELIMINAR</b> para confirmar</label>
             <input class="input" id="del-conf" type="text" autocomplete="off" placeholder="ELIMINAR">
           </div>
           ${DB.state.modo === 'nube' ? `
             <div class="field">
-              <label for="del-clave">Confirme con su contraseña</label>
+              <label for="del-clave">Confirmá con tu contraseña</label>
               <input class="input" id="del-clave" type="password" autocomplete="current-password">
             </div>` : ''}`,
         acciones: [
@@ -291,7 +291,7 @@ Screens.perfil = {
               const v = document.getElementById('del-conf');
               if (v.value.trim().toUpperCase() !== 'ELIMINAR') {
                 v.closest('.field').classList.add('is-invalid');
-                UI.toast('Confirmación incompleta', 'Escriba ELIMINAR para continuar.', 'error');
+                UI.toast('Falta confirmar', 'Escribí ELIMINAR para poder seguir.', 'error');
                 return false;   // mantiene la ventana abierta
               }
               if (DB.state.modo !== 'nube' || !window.Nube) {
@@ -306,7 +306,7 @@ Screens.perfil = {
               const clave = document.getElementById('del-clave');
               if (!clave.value) {
                 clave.closest('.field').classList.add('is-invalid');
-                UI.toast('Falta la contraseña', 'Se pide para confirmar que es usted.', 'error');
+                UI.toast('Falta la contraseña', 'Se pide para confirmar que sos vos.', 'error');
                 return false;
               }
               UI.cerrarModal();

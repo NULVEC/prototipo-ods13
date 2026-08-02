@@ -53,9 +53,10 @@
   --ochre-fill:     #b8862a;  /* versión para gráficos, medallas, rellenos   */
   --ochre-tint:     #f1e7cf;
 
-  /* --- Brasa (emisiones, error, alerta) --------------------------------- */
+  /* --- Brasa (emisiones, error, alerta, racha encendida) ---------------- */
   --ember:          #b8412a;
   --ember-700:      #8f3220;
+  --ember-bright:   #f2825a;  /* solo sobre fondos oscuros, como azul-bright  */
   --ember-tint:     #f6e0da;
 
   /* --- Tipografía ------------------------------------------------------- */
