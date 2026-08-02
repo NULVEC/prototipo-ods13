@@ -225,6 +225,26 @@ Screens.inicio = {
     if (!lienzo || !datos) return;
 
     const registros = DB.state.registros;
+
+    /* Un bosque sin árboles y un navegador sin WebGL son dos cosas distintas
+       y se explican distinto. `Bosque3D.montar` devuelve null en los dos
+       casos, así que la falta de datos se comprueba antes: culpar al
+       navegador de que la cuenta esté recién creada sería mentirle a la
+       persona sobre qué tiene que hacer. */
+    if (registros.length === 0) {
+      lienzo.innerHTML = `
+        <div class="escena-sin3d">
+          ${Icon.get('brote', 30, 1.5)}
+          <p>Tu bosque todavía está vacío. Registrá tu primera acción y aquí
+             va a brotar el primer árbol.</p>
+          <a class="btn btn-accent" href="#/nueva-accion" style="margin-top:var(--s-4)">
+            ${Icon.get('accion', 16)}<span>Registrar mi primera acción</span>
+          </a>
+        </div>`;
+      datos.innerHTML = '';
+      return;
+    }
+
     const bosque = window.Bosque3D ? Bosque3D.montar('escena-bosque', registros) : null;
 
     if (!bosque) {
@@ -275,6 +295,20 @@ Screens.inicio = {
     const datos = document.getElementById('escena-datos');
     const lienzo = document.getElementById('escena-carbono');
     if (!datos || !lienzo) return;
+
+    /* Sin registros no hay volumen que dibujar: la escena saldría con un cubo
+       de cero metros de lado, que no dice nada. Igual que en el bosque, la
+       ausencia de datos se explica antes de llegar al 3D. */
+    if (kg <= 0) {
+      lienzo.innerHTML = `
+        <div class="escena-sin3d">
+          ${Icon.get('globo', 30, 1.5)}
+          <p>Cuando registrés tu primera acción vas a ver acá, a escala real,
+             el volumen que ocupa el CO₂ que no soltaste.</p>
+        </div>`;
+      datos.innerHTML = '';
+      return;
+    }
 
     const escena = window.Escena3D ? Escena3D.montar('escena-carbono', kg) : null;
 
