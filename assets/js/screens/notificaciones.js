@@ -172,8 +172,11 @@ Screens.notificaciones = {
     });
 
     const form = document.getElementById('form-notif');
-    form.addEventListener('submit', async e => {
-      e.preventDefault();
+    const hora = document.getElementById('n-hora');
+
+    /* Guarda de verdad. Se separa del envío para poder llamarla también
+       después de que la persona confirme que quiere quedarse sin avisos. */
+    const guardar = async () => {
       await UI.cargando(document.getElementById('n-guardar'), 750);
       const d = new FormData(form);
       const u = DB.state.usuario;
@@ -181,8 +184,56 @@ Screens.notificaciones = {
       u.frecuencia = d.get('frecuencia');
       u.hora = d.get('hora');
       DB.guardarPerfil({ notificaciones: u.notificaciones, frecuencia: u.frecuencia, hora: u.hora });
-      UI.toast('Preferencias guardadas', `Recibirá el recordatorio ${u.frecuencia} a las ${u.hora}.`);
+      UI.toast('Listo, quedó guardado',
+        d.has('recordatorio')
+          ? `Te vamos a escribir ${u.frecuencia === 'diaria' ? 'todos los días' : u.frecuencia} a las ${u.hora}.`
+          : 'No vas a recibir recordatorios.');
+    };
+
+    /* ------------------------------------------------------------------
+       Validación de RF-06 (UC6 Recibir notificaciones y recordatorios).
+
+       Dos comprobaciones, porque son dos errores distintos:
+
+       1. Si el recordatorio está activo, la hora es obligatoria. El actor
+          Temporizador del Avance 3 dispara a una hora concreta; sin ella no
+          hay nada que programar y la preferencia quedaría sin efecto.
+       2. Apagar los cuatro avisos es una decisión legítima, no un error,
+          así que no se bloquea: se confirma. Es la diferencia entre "no
+          podés" y "asegurate de que es lo que querés".
+       ------------------------------------------------------------------ */
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const d = new FormData(form);
+
+      if (d.has('recordatorio') && !d.get('hora')) {
+        UI.marcar(hora, 'Poné la hora a la que querés que te escribamos.');
+        hora.focus();
+        UI.toast('Falta la hora', 'El recordatorio necesita una hora para poder programarse.', 'error');
+        return;
+      }
+      UI.marcar(hora, null);
+
+      const ninguno = !['recordatorio', 'logros', 'resumen', 'comunidad'].some(k => d.has(k));
+      if (ninguno) {
+        UI.modal({
+          titulo: '¿Seguro que no querés ningún aviso?',
+          cuerpo: `<p>Vas a apagar los cuatro. La app va a seguir funcionando igual, pero nadie te
+                   va a recordar registrar, ni te vamos a avisar cuando ganés una insignia.</p>
+                   <p class="text-sm muted">Lo podés volver a encender cuando querás.</p>`,
+          acciones: [
+            { texto: 'Mejor dejo alguno', clase: 'btn-ghost' },
+            { texto: 'Sí, apagar todo', clase: 'btn-danger', onClick: guardar }
+          ]
+        });
+        return;
+      }
+
+      guardar();
     });
+
+    // Al corregir la hora se limpia el error, sin esperar a que reenvíe.
+    hora.addEventListener('input', () => { if (hora.value) UI.marcar(hora, null); });
 
     this.conectar();
   },

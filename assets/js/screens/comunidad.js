@@ -10,6 +10,11 @@
    una escena es buena para captar la idea y mala para consultar un dato.
    ========================================================================= */
 
+/* Participantes mínimos para que la comparativa signifique algo. Tres es el
+   primer número con el que existe un "en medio": con dos, cada quien es solo
+   el mejor o el peor, y además sabe quién es el otro. */
+const MINIMO_PARTICIPANTES = 3;
+
 Screens.comunidad = {
 
   zona: 'todas',
@@ -121,6 +126,33 @@ Screens.comunidad = {
           </div>
         </div>
 
+        ${/* ----------------------------------------------------------------
+             Validación de RF-08 (UC8 Ver comparativa comunitaria).
+
+             Una comparativa necesita contra quién compararse. Con una o dos
+             personas el ranking existe, pero no dice nada: quedar "de
+             segundo entre dos" no informa del propio desempeño, y encima
+             deja de ser anónimo, porque con dos participantes cada quien
+             sabe exactamente quién es el otro.
+
+             Por eso se exige un mínimo de participantes antes de dibujar la
+             tabla. Es la misma razón por la que la pantalla completa la
+             comunidad con participantes simulados mientras crece.
+             --------------------------------------------------------------- */''}
+        ${tabla.length < MINIMO_PARTICIPANTES ? `
+          <div class="panel">
+            <div class="empty">
+              ${Icon.get('comunidad', 34, 1.5)}
+              <h3>Faltan participantes para comparar</h3>
+              <p>En ${UI.esc(this.zona)} hay ${tabla.length}
+                 ${tabla.length === 1 ? 'participante' : 'participantes'}, y con menos de
+                 ${MINIMO_PARTICIPANTES} la comparación no dice nada útil —además de que
+                 dejaría de ser anónima.</p>
+              <button class="btn btn-primary" type="button" data-ver-todas>
+                ${Icon.get('comunidad', 16)}<span>Ver todas las provincias</span>
+              </button>
+            </div>
+          </div>` : `
         <div class="table-wrap">
           <table class="data">
             <caption class="sr-only">Comparativa comunitaria anónima</caption>
@@ -157,7 +189,7 @@ Screens.comunidad = {
               }).join('')}
             </tbody>
           </table>
-        </div>
+        </div>`}
 
         ${simulados ? `
           <p class="text-sm muted" style="margin-top:var(--s-4);display:flex;gap:8px;align-items:flex-start">
@@ -184,6 +216,12 @@ Screens.comunidad = {
       this.zona = e.target.value;
       Router.resolver();
     });
+
+    // Salida del estado sin comparación: vuelve a todas las provincias.
+    UI.$$('[data-ver-todas]').forEach(b => b.addEventListener('click', () => {
+      this.zona = 'todas';
+      Router.resolver();
+    }));
   },
 
   /* --------------------------------------------------------------------

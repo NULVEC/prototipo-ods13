@@ -164,12 +164,44 @@ Screens.inicio = {
     this.montarBosque();
     this.montarEscena();
 
-    /* Carga diferida del contenido educativo: es la parte que en la
-       arquitectura real vendría del backend (InformacionAmbiental). */
+    this.cargarArticulos();
+  },
+
+  /* --------------------------------------------------------------------
+     Validación de RF-03 (UC3 Visualizar información ambiental).
+
+     El contenido educativo es lo que este caso de uso promete mostrar, y en
+     la arquitectura del Avance 3 viene del backend (InformacionAmbiental).
+     Si la respuesta llega vacía, la pantalla no puede quedarse con el
+     esqueleto girando para siempre: se comprueba que haya contenido y, si
+     no lo hay, se dice qué pasó y se ofrece reintentar.
+     ------------------------------------------------------------------ */
+  cargarArticulos() {
+    const cont = document.getElementById('articulos');
+    if (!cont) return;
+
     setTimeout(() => {
-      const cont = document.getElementById('articulos');
-      if (!cont) return;
-      cont.innerHTML = DB.articulos.map(a => `
+      const articulos = DB.articulos;
+
+      if (!Array.isArray(articulos) || articulos.length === 0) {
+        cont.innerHTML = `
+          <div class="empty">
+            ${Icon.get('alertaCirculo', 32, 1.5)}
+            <h3>No se pudo traer el contenido</h3>
+            <p>El servidor no devolvió los artículos sobre clima. Puede ser la conexión.</p>
+            <button class="btn btn-primary" type="button" data-reintentar-articulos>
+              ${Icon.get('recargar', 16)}<span>Probar de nuevo</span>
+            </button>
+          </div>`;
+        cont.querySelector('[data-reintentar-articulos]')
+          .addEventListener('click', () => {
+            cont.innerHTML = UI.esqueleto(3);
+            this.cargarArticulos();
+          });
+        return;
+      }
+
+      cont.innerHTML = articulos.map(a => `
         <article class="article">
           <div class="art-fig">
             ${a.cifra}${a.unidadCifra ? `<span style="font-size:.6em">${a.unidadCifra}</span>` : ''}

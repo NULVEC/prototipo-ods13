@@ -326,16 +326,26 @@ const DB = (() => {
   /* Comunidad (UC8) — comparativa anónima                               */
   /* Los alias usan especies y ecosistemas del país; nunca nombres reales.*/
   /* ------------------------------------------------------------------ */
+  /* El reparto por provincia no es casual. La comparativa exige un mínimo de
+     participantes para significar algo (ver MINIMO_PARTICIPANTES en la
+     pantalla UC8), así que los datos de demostración incluyen provincias que
+     superan ese mínimo —San José, Alajuela y Cartago— y provincias que no,
+     para que ambos comportamientos se puedan ver de verdad al filtrar. */
   const comunidad = [
     { alias: 'Quetzal-089',  co2: 168.4, acciones: 141, zona: 'San José' },
     { alias: 'Manglar-450',  co2: 141.2, acciones: 122, zona: 'Puntarenas' },
     { alias: 'Ceiba-077',    co2: 118.6, acciones: 107, zona: 'Alajuela' },
     { alias: 'Yigüirro-418', co2: 0,     acciones: 0,   zona: 'San José', esYo: true },
+    { alias: 'Jaguar-274',   co2: 105.3, acciones: 96,  zona: 'Alajuela' },
     { alias: 'Danta-902',    co2: 96.4,  acciones: 92,  zona: 'Heredia' },
+    { alias: 'Irazú-330',    co2: 92.7,  acciones: 88,  zona: 'Cartago' },
     { alias: 'Colibrí-312',  co2: 88.1,  acciones: 84,  zona: 'San José' },
     { alias: 'Guaria-118',   co2: 79.5,  acciones: 71,  zona: 'Cartago' },
+    { alias: 'Tucán-806',    co2: 74.8,  acciones: 66,  zona: 'Heredia' },
     { alias: 'Cocobolo-145', co2: 71.2,  acciones: 63,  zona: 'Guanacaste' },
+    { alias: 'Poás-651',     co2: 63.9,  acciones: 58,  zona: 'Alajuela' },
     { alias: 'Perezoso-621', co2: 58.3,  acciones: 49,  zona: 'Limón' },
+    { alias: 'Orosi-482',    co2: 51.6,  acciones: 44,  zona: 'Cartago' },
     { alias: 'Tapir-533',    co2: 44.7,  acciones: 38,  zona: 'San José' }
   ];
 

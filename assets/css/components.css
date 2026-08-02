@@ -420,6 +420,10 @@ table.data .align-r { text-align: right; }
   transition: border-color var(--dur-2) var(--ease), transform var(--dur-2) var(--ease);
 }
 .badge-card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+/* La tarjeta se abre para consultar el criterio y cuánto falta (RF-07), así
+   que se comporta como control: puntero, foco visible y respuesta al teclado. */
+.badge-card[data-insignia] { cursor: pointer; }
+.badge-card[data-insignia]:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 .seal {
   width: 74px; height: 84px; margin: 0 auto var(--s-4);

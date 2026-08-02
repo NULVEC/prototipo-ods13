@@ -168,12 +168,40 @@ Screens.reporte = {
       Router.resolver();
     }));
 
+    /* ------------------------------------------------------------------
+       Validación de RF-09 (UC9 Generar reporte de emisiones estimadas).
+
+       Un reporte de un periodo sin registros no es un reporte vacío: es un
+       documento que afirma "cero emisiones evitadas" sobre datos que no
+       existen. Se bloquea la generación y se explica qué falta, en lugar de
+       entregar un PDF que induce a error.
+       ------------------------------------------------------------------ */
+    const periodoVacio = () => DB.enUltimosDias(this.meses * 30).length === 0;
+
+    function avisarSinDatos() {
+      UI.modal({
+        titulo: 'Todavía no hay nada que reportar',
+        cuerpo: `<p>En los últimos ${Screens.reporte.meses} meses no hay ninguna acción registrada,
+                 así que el reporte saldría en cero y no diría nada cierto sobre tu impacto.</p>
+                 <p class="text-sm muted">Registrá al menos una acción, o mirá un periodo más largo.</p>`,
+        acciones: [
+          { texto: 'Cerrar', clase: 'btn-ghost' },
+          { texto: 'Registrar una acción', clase: 'btn-primary', icono: 'accion',
+            onClick: () => Router.ir('/nueva-accion') }
+        ]
+      });
+    }
+
     document.getElementById('r-descargar').addEventListener('click', async e => {
+      if (periodoVacio()) { avisarSinDatos(); return; }
       await UI.cargando(e.currentTarget, 1100);
       UI.toast('Reporte generado',
         'En la versión final, el backend devuelve el archivo PDF por la API REST.', 'info');
     });
 
-    document.getElementById('r-imprimir').addEventListener('click', () => window.print());
+    document.getElementById('r-imprimir').addEventListener('click', () => {
+      if (periodoVacio()) { avisarSinDatos(); return; }
+      window.print();
+    });
   }
 };
