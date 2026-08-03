@@ -10,9 +10,12 @@
    Los factores de emisión declaran su fuente (ver FUENTES). Los de
    electricidad vienen del Instituto Meteorológico Nacional, que los publica
    por año para Costa Rica; los de transporte, de las tablas de conversión
-   del gobierno británico; los de aluminio, del modelo WARM de la EPA.
-   Los marcados `porVerificar` siguen siendo valores de referencia y hay que
-   contrastarlos antes de citarlos.
+   del gobierno británico; los de reciclaje y compostaje, del modelo WARM de
+   la EPA. Todos se contrastaron contra el documento publicado.
+
+   Quedan dos sin verificar, marcados `porVerificar`: el agua, y el consumo
+   por kilómetro que se le supone a un vehículo eléctrico. Salen señalados en
+   el reporte para que no se citen sin confirmarlos.
    ========================================================================= */
 
 const DB = (() => {
@@ -51,11 +54,11 @@ const DB = (() => {
   /* ------------------------------------------------------------------ */
   const FUENTES = {
     imn: {
-      sigla: 'IMN 2023',
-      titulo: 'Factores de emisión de gases efecto invernadero, 13.ª edición',
+      sigla: 'IMN 2024',
+      titulo: 'Factores de emisión de gases efecto invernadero, 14.ª edición',
       autor: 'Instituto Meteorológico Nacional de Costa Rica',
-      anio: 2023,
-      url: 'http://cglobal.imn.ac.cr/documentos/publicaciones/factoresemision/factoresemision2023/FactoresEmision-GEI-2023.pdf',
+      anio: 2024,
+      url: 'https://cglobal.imn.ac.cr/documentos/publicaciones/factoresemision/factoresemision2024/FactoresEmision-GEI-2024.pdf',
       verificada: true
     },
     defra: {
@@ -68,9 +71,9 @@ const DB = (() => {
     },
     warm: {
       sigla: 'EPA WARM',
-      titulo: 'Waste Reduction Model (WARM)',
+      titulo: 'Waste Reduction Model (WARM), versión 16',
       autor: 'United States Environmental Protection Agency',
-      anio: 2019,
+      anio: 2023,
       url: 'https://www.epa.gov/waste-reduction-model',
       verificada: true
     },
@@ -99,27 +102,46 @@ const DB = (() => {
   /* Auto mediano de gasolina, solo la persona que conduce (DEFRA 2024).
      Es la referencia contra la que se mide todo el transporte. */
   const AUTO_KM = 0.187;
-  const BUS_KM  = 0.089;   // autobús urbano por pasajero-kilómetro (DEFRA 2024)
+  const BUS_KM  = 0.089;   // autobús urbano, por pasajero-kilómetro (DEFRA 2024)
+  const TREN_KM = 0.035;   // tren de pasajeros, por pasajero-kilómetro (DEFRA 2024)
 
   /* Las restas se hacen aquí y no a mano: el número que ve la persona y el
      cálculo que se explica en el reporte salen de la misma línea, así que no
      se pueden desincronizar al retocar uno de los dos. */
   const redondear = v => +v.toFixed(3);
 
+  /* Red eléctrica de Costa Rica, año 2023: el más reciente que publica el IMN
+     en su 14.ª edición. */
+  const ELECTRICIDAD_KWH = 0.0879;
+
+  /* --- Conversión de las tablas de WARM ---------------------------------
+     WARM publica sus factores en toneladas de CO2e por tonelada corta de
+     material, y con signo negativo cuando la gestión evita emisiones. Lo que
+     se evita al reciclar en vez de enterrar es la diferencia entre las dos
+     columnas, y esta app trabaja en kilos por kilo.
+     ---------------------------------------------------------------------- */
+  const TONELADA_CORTA = 907.185;                    // kg
+  const warm = (reciclar, enterrar) =>
+    redondear((enterrar - reciclar) * 1000 / TONELADA_CORTA);
+
   const CATEGORIAS = {
     reciclaje: {
       id: 'reciclaje', nombre: 'Reciclaje', icono: 'reciclaje', color: '#17493b', colorTexto: '#17493b',
       clase: 'RegistroAccion', unidad: 'kg', ayuda: 'Material separado y entregado a un centro de acopio.',
+      /* Cada par de números son las columnas "Net Recycling" y "Net
+         Landfilling" de WARM v16. El papel pesa tanto porque su factor
+         incluye el carbono forestal que no se corta. */
       tipos: [
-        { id: 'papel',    nombre: 'Papel y cartón',   factor: 0.90, fuente: 'porVerificar' },
-        { id: 'plastico', nombre: 'Plástico PET',     factor: 1.53, fuente: 'porVerificar' },
-        { id: 'vidrio',   nombre: 'Vidrio',           factor: 0.31, fuente: 'porVerificar' },
-        /* WARM da 9,15 t CO2e evitadas por reciclar una tonelada corta de
-           latas en lugar de enviarla al relleno. Una tonelada corta son
-           907,185 kg, así que 9150 / 907,185 = 10,09 kg por kilo. */
-        { id: 'aluminio', nombre: 'Aluminio y latas', factor: 10.09, fuente: 'warm',
-          calculo: '9,15 t CO₂e por tonelada corta ÷ 907,185 kg' },
-        { id: 'organico', nombre: 'Orgánico a compost', factor: 0.25, fuente: 'porVerificar' }
+        { id: 'papel',    nombre: 'Papel y cartón',     factor: warm(-3.55, 0.02), fuente: 'warm',
+          calculo: 'Papel mixto doméstico: reciclar −3,55 frente a enterrar 0,02' },
+        { id: 'plastico', nombre: 'Plástico PET',       factor: warm(-1.04, 0.02), fuente: 'warm',
+          calculo: 'PET: reciclar −1,04 frente a enterrar 0,02' },
+        { id: 'vidrio',   nombre: 'Vidrio',             factor: warm(-0.28, 0.02), fuente: 'warm',
+          calculo: 'Vidrio: reciclar −0,28 frente a enterrar 0,02' },
+        { id: 'aluminio', nombre: 'Aluminio y latas',   factor: warm(-9.13, 0.02), fuente: 'warm',
+          calculo: 'Latas de aluminio: reciclar −9,13 frente a enterrar 0,02' },
+        { id: 'organico', nombre: 'Orgánico a compost', factor: warm(-0.15, 0.50), fuente: 'warm',
+          calculo: 'Restos de comida: compostar −0,15 frente a enterrar 0,50' }
       ]
     },
     transporte: {
@@ -132,23 +154,25 @@ const DB = (() => {
           calculo: `Auto ${AUTO_KM} − autobús urbano ${BUS_KM}` },
         { id: 'compartido',nombre: 'Viaje compartido',     factor: redondear(AUTO_KM / 2), fuente: 'defra',
           calculo: 'Al ir dos personas, a cada una le toca la mitad' },
-        { id: 'tren',      nombre: 'Tren urbano',          factor: 0.135, fuente: 'porVerificar' },
-        { id: 'electrico', nombre: 'Vehículo eléctrico',   factor: 0.176, fuente: 'porVerificar',
-          calculo: 'Auto menos el consumo eléctrico del vehículo' }
+        { id: 'tren',      nombre: 'Tren urbano',          factor: redondear(AUTO_KM - TREN_KM), fuente: 'defra',
+          calculo: `Auto ${AUTO_KM} − tren de pasajeros ${TREN_KM}` },
+        { id: 'electrico', nombre: 'Vehículo eléctrico',   factor: redondear(AUTO_KM - 0.19 * ELECTRICIDAD_KWH),
+          fuente: 'porVerificar',
+          calculo: `Auto ${AUTO_KM} − 0,19 kWh/km × ${ELECTRICIDAD_KWH}; falta verificar el consumo` }
       ]
     },
     energia: {
       id: 'energia', nombre: 'Energía', icono: 'energia', color: '#b8862a', colorTexto: '#7d5a12',
       clase: 'AccionEnergia', unidad: 'kWh', ayuda: 'Consumo eléctrico evitado respecto a su promedio.',
-      /* El IMN publica este factor por año, porque la matriz cambia con la
-         hidrología. Se usa 2022, el más reciente de la 13.ª edición. Es bajo
-         —y por eso ahorrar electricidad rinde poco aquí— porque casi toda la
-         generación del país es renovable. */
+      /* Se usa el año más reciente que publica el IMN. El salto de 2022
+         (0,0534) a 2023 (0,0879) no es un error: 2023 fue seco, entró más
+         generación térmica y el factor del país casi se dobló. Aun así sigue
+         siendo bajo, y por eso ahorrar electricidad rinde poco aquí. */
       tipos: [
-        { id: 'led',     nombre: 'Cambio a iluminación LED',      factor: 0.0534, fuente: 'imn' },
-        { id: 'standby', nombre: 'Desconectar equipos en espera', factor: 0.0534, fuente: 'imn' },
-        { id: 'termo',   nombre: 'Ducha más corta (calentador)',  factor: 0.0534, fuente: 'imn' },
-        { id: 'solar',   nombre: 'Secado de ropa al sol',         factor: 0.0534, fuente: 'imn' }
+        { id: 'led',     nombre: 'Cambio a iluminación LED',      factor: ELECTRICIDAD_KWH, fuente: 'imn' },
+        { id: 'standby', nombre: 'Desconectar equipos en espera', factor: ELECTRICIDAD_KWH, fuente: 'imn' },
+        { id: 'termo',   nombre: 'Ducha más corta (calentador)',  factor: ELECTRICIDAD_KWH, fuente: 'imn' },
+        { id: 'solar',   nombre: 'Secado de ropa al sol',         factor: ELECTRICIDAD_KWH, fuente: 'imn' }
       ]
     },
     agua: {
