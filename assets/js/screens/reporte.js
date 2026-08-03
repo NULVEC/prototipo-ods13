@@ -130,19 +130,55 @@ Screens.reporte = {
         </div>
       </section>
 
-      <section class="section grid grid-2">
+      <section class="section">
         <div class="panel">
-          <div class="panel-head">${Icon.get('info', 18)}<h3>Cuánto ahorra cada cosa</h3></div>
+          <div class="panel-head">${Icon.get('info', 18)}<h3>Cuánto ahorra cada cosa, y de dónde sale</h3></div>
           <div class="panel-body">
-            <dl class="dl">
-              ${DB.CAT_LIST.map(c => `
-                <dt>${c.nombre}</dt>
-                <dd>${DB.fmt.n(Math.min(...c.tipos.map(t => t.factor)), 3)} – ${DB.fmt.n(Math.max(...c.tipos.map(t => t.factor)), 3)} kg de CO₂ por cada ${c.unidad}</dd>`).join('')}
-            </dl>
+            <table class="data tabla-factores">
+              <caption class="sr-only">Factores de emisión aplicados y su fuente</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Acción</th>
+                  <th scope="col" class="align-r">Factor</th>
+                  <th scope="col">Fuente</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${DB.CAT_LIST.flatMap(c => c.tipos.map(t => {
+                  const f = DB.fuenteDe(t);
+                  return `<tr>
+                    <td>
+                      <b>${UI.esc(t.nombre)}</b>
+                      <br><span class="text-sm muted">${UI.esc(c.nombre)}${
+                        t.calculo ? ' · ' + UI.esc(t.calculo) : ''}</span>
+                    </td>
+                    <td class="align-r mono" style="white-space:nowrap">
+                      ${DB.fmt.n(t.factor, 3)}<br><span class="text-sm muted">kg / ${c.unidad}</span>
+                    </td>
+                    <td>
+                      ${f.verificada
+                        ? `<span class="tag tag-pine">${UI.esc(f.sigla)}</span>`
+                        : `<span class="tag">${UI.esc(f.sigla)}</span>`}
+                    </td>
+                  </tr>`;
+                })).join('')}
+              </tbody>
+            </table>
           </div>
           <div class="panel-foot">
-            Estos son los números por los que se multiplica lo que registrás. El de electricidad es bajo
-            (0,035 por kWh) porque casi toda la del país ya es renovable.
+            <p style="margin:0 0 var(--s-3)">Estos son los números por los que se multiplica lo que
+            registrás. El de electricidad es bajo porque casi toda la del país ya es renovable.</p>
+            <dl class="dl" style="margin:0">
+              ${Object.values(DB.FUENTES).filter(f => f.verificada).map(f => `
+                <dt>${UI.esc(f.sigla)}</dt>
+                <dd>${UI.esc(f.autor)}. <i>${UI.esc(f.titulo)}</i>, ${f.anio}.
+                    ${f.url ? `<a href="${UI.esc(f.url)}" target="_blank" rel="noopener">Ver documento</a>` : ''}</dd>`).join('')}
+            </dl>
+            <p class="text-sm muted" style="margin:var(--s-3) 0 0">
+              Los marcados <span class="tag">Por verificar</span> son valores de referencia razonables
+              pero todavía sin contrastar contra su fuente publicada. Hay que confirmarlos antes de
+              citarlos en el artículo.
+            </p>
           </div>
         </div>
 
@@ -153,8 +189,9 @@ Screens.reporte = {
             reemplazaste la opción de siempre: que ese kilómetro en bus lo habrías hecho en carro de gasolina.</p>
             <p class="text-sm">Las cantidades las escribís vos y nadie las verifica, así que esto sirve para
             seguirte la pista a vos mismo, no como un certificado oficial de nada.</p>
-            <p class="text-sm" style="margin-bottom:0">Los valores de este prototipo son de referencia
-            académica y no provienen de un inventario oficial.</p>
+            <p class="text-sm" style="margin-bottom:0">Cada factor dice de dónde sale, en la tabla de
+            aquí arriba. Los de electricidad son los que el Instituto Meteorológico Nacional publica
+            para Costa Rica, así que reflejan la matriz del país y no un promedio de otro lado.</p>
           </div>
         </div>
       </section>`;

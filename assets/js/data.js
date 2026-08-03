@@ -7,8 +7,12 @@
    del documento: Usuario, RegistroAccion, AccionSostenible, Insignia,
    LogroUsuario, Notificacion, InformacionAmbiental, ReporteProgreso.
 
-   Aviso: los factores de emisión son valores de referencia para el
-   prototipo, no una fuente oficial de inventario de GEI.
+   Los factores de emisión declaran su fuente (ver FUENTES). Los de
+   electricidad vienen del Instituto Meteorológico Nacional, que los publica
+   por año para Costa Rica; los de transporte, de las tablas de conversión
+   del gobierno británico; los de aluminio, del modelo WARM de la EPA.
+   Los marcados `porVerificar` siguen siendo valores de referencia y hay que
+   contrastarlos antes de citarlos.
    ========================================================================= */
 
 const DB = (() => {
@@ -34,53 +38,135 @@ const DB = (() => {
   }
 
   /* ------------------------------------------------------------------ */
-  /* Catálogo de acciones sostenibles (jerarquía AccionSostenible)       */
-  /* factor = kg de CO2e evitados por unidad                             */
+  /* Fuentes de los factores de emisión                                  */
+  /*                                                                     */
+  /* Cada factor del catálogo declara de dónde sale. Un número sin       */
+  /* fuente no se puede defender ni citar, y este sistema afirma cosas   */
+  /* concretas sobre el impacto de una persona.                          */
+  /*                                                                     */
+  /* `verificada: false` marca las fuentes cuyo valor exacto todavía no  */
+  /* se contrastó contra el documento publicado. Son de referencia       */
+  /* razonable, pero antes de citarlas en el artículo hay que abrir la   */
+  /* fuente y confirmar la cifra y su edición.                           */
   /* ------------------------------------------------------------------ */
+  const FUENTES = {
+    imn: {
+      sigla: 'IMN 2023',
+      titulo: 'Factores de emisión de gases efecto invernadero, 13.ª edición',
+      autor: 'Instituto Meteorológico Nacional de Costa Rica',
+      anio: 2023,
+      url: 'http://cglobal.imn.ac.cr/documentos/publicaciones/factoresemision/factoresemision2023/FactoresEmision-GEI-2023.pdf',
+      verificada: true
+    },
+    defra: {
+      sigla: 'DEFRA 2024',
+      titulo: 'UK Government GHG Conversion Factors for Company Reporting',
+      autor: 'Department for Energy Security and Net Zero, Reino Unido',
+      anio: 2024,
+      url: 'https://www.gov.uk/government/collections/government-conversion-factors-for-company-reporting',
+      verificada: true
+    },
+    warm: {
+      sigla: 'EPA WARM',
+      titulo: 'Waste Reduction Model (WARM)',
+      autor: 'United States Environmental Protection Agency',
+      anio: 2019,
+      url: 'https://www.epa.gov/waste-reduction-model',
+      verificada: true
+    },
+    porVerificar: {
+      sigla: 'Por verificar',
+      titulo: 'Valor de referencia pendiente de contrastar con su fuente',
+      autor: '—',
+      anio: null,
+      url: '',
+      verificada: false
+    }
+  };
+
+  /* ------------------------------------------------------------------ */
+  /* Catálogo de acciones sostenibles (jerarquía AccionSostenible)       */
+  /*                                                                     */
+  /* factor = kg de CO2e evitados por unidad.                            */
+  /*                                                                     */
+  /* En transporte, "evitado" es la diferencia contra el viaje que se    */
+  /* sustituye: lo que habría emitido un auto particular menos lo que    */
+  /* emite el medio elegido. Por eso caminar evita el factor completo    */
+  /* del auto y el autobús evita solo la diferencia. Cada tipo lleva su  */
+  /* cálculo escrito para que la resta se pueda revisar.                 */
+  /* ------------------------------------------------------------------ */
+
+  /* Auto mediano de gasolina, solo la persona que conduce (DEFRA 2024).
+     Es la referencia contra la que se mide todo el transporte. */
+  const AUTO_KM = 0.187;
+  const BUS_KM  = 0.089;   // autobús urbano por pasajero-kilómetro (DEFRA 2024)
+
+  /* Las restas se hacen aquí y no a mano: el número que ve la persona y el
+     cálculo que se explica en el reporte salen de la misma línea, así que no
+     se pueden desincronizar al retocar uno de los dos. */
+  const redondear = v => +v.toFixed(3);
+
   const CATEGORIAS = {
     reciclaje: {
       id: 'reciclaje', nombre: 'Reciclaje', icono: 'reciclaje', color: '#17493b', colorTexto: '#17493b',
       clase: 'RegistroAccion', unidad: 'kg', ayuda: 'Material separado y entregado a un centro de acopio.',
       tipos: [
-        { id: 'papel',    nombre: 'Papel y cartón',   factor: 0.90 },
-        { id: 'plastico', nombre: 'Plástico PET',     factor: 1.53 },
-        { id: 'vidrio',   nombre: 'Vidrio',           factor: 0.31 },
-        { id: 'aluminio', nombre: 'Aluminio y latas', factor: 8.14 },
-        { id: 'organico', nombre: 'Orgánico a compost', factor: 0.25 }
+        { id: 'papel',    nombre: 'Papel y cartón',   factor: 0.90, fuente: 'porVerificar' },
+        { id: 'plastico', nombre: 'Plástico PET',     factor: 1.53, fuente: 'porVerificar' },
+        { id: 'vidrio',   nombre: 'Vidrio',           factor: 0.31, fuente: 'porVerificar' },
+        /* WARM da 9,15 t CO2e evitadas por reciclar una tonelada corta de
+           latas en lugar de enviarla al relleno. Una tonelada corta son
+           907,185 kg, así que 9150 / 907,185 = 10,09 kg por kilo. */
+        { id: 'aluminio', nombre: 'Aluminio y latas', factor: 10.09, fuente: 'warm',
+          calculo: '9,15 t CO₂e por tonelada corta ÷ 907,185 kg' },
+        { id: 'organico', nombre: 'Orgánico a compost', factor: 0.25, fuente: 'porVerificar' }
       ]
     },
     transporte: {
       id: 'transporte', nombre: 'Transporte', icono: 'transporte', color: '#1d4e9b', colorTexto: '#1d4e9b',
       clase: 'AccionTransporte', unidad: 'km', ayuda: 'Distancia recorrida sin usar vehículo particular.',
       tipos: [
-        { id: 'caminar',   nombre: 'A pie o en bicicleta', factor: 0.192 },
-        { id: 'autobus',   nombre: 'Autobús',              factor: 0.103 },
-        { id: 'tren',      nombre: 'Tren urbano',          factor: 0.135 },
-        { id: 'compartido',nombre: 'Viaje compartido',     factor: 0.096 },
-        { id: 'electrico', nombre: 'Vehículo eléctrico',   factor: 0.185 }
+        { id: 'caminar',   nombre: 'A pie o en bicicleta', factor: AUTO_KM, fuente: 'defra',
+          calculo: 'Se evita el viaje entero en auto' },
+        { id: 'autobus',   nombre: 'Autobús',              factor: redondear(AUTO_KM - BUS_KM), fuente: 'defra',
+          calculo: `Auto ${AUTO_KM} − autobús urbano ${BUS_KM}` },
+        { id: 'compartido',nombre: 'Viaje compartido',     factor: redondear(AUTO_KM / 2), fuente: 'defra',
+          calculo: 'Al ir dos personas, a cada una le toca la mitad' },
+        { id: 'tren',      nombre: 'Tren urbano',          factor: 0.135, fuente: 'porVerificar' },
+        { id: 'electrico', nombre: 'Vehículo eléctrico',   factor: 0.176, fuente: 'porVerificar',
+          calculo: 'Auto menos el consumo eléctrico del vehículo' }
       ]
     },
     energia: {
       id: 'energia', nombre: 'Energía', icono: 'energia', color: '#b8862a', colorTexto: '#7d5a12',
       clase: 'AccionEnergia', unidad: 'kWh', ayuda: 'Consumo eléctrico evitado respecto a su promedio.',
+      /* El IMN publica este factor por año, porque la matriz cambia con la
+         hidrología. Se usa 2022, el más reciente de la 13.ª edición. Es bajo
+         —y por eso ahorrar electricidad rinde poco aquí— porque casi toda la
+         generación del país es renovable. */
       tipos: [
-        { id: 'led',        nombre: 'Cambio a iluminación LED', factor: 0.035 },
-        { id: 'standby',    nombre: 'Desconectar equipos en espera', factor: 0.035 },
-        { id: 'termo',      nombre: 'Ducha más corta (calentador)', factor: 0.035 },
-        { id: 'solar',      nombre: 'Secado de ropa al sol',   factor: 0.035 }
+        { id: 'led',     nombre: 'Cambio a iluminación LED',      factor: 0.0534, fuente: 'imn' },
+        { id: 'standby', nombre: 'Desconectar equipos en espera', factor: 0.0534, fuente: 'imn' },
+        { id: 'termo',   nombre: 'Ducha más corta (calentador)',  factor: 0.0534, fuente: 'imn' },
+        { id: 'solar',   nombre: 'Secado de ropa al sol',         factor: 0.0534, fuente: 'imn' }
       ]
     },
     agua: {
       id: 'agua', nombre: 'Agua', icono: 'agua', color: '#4e8f7c', colorTexto: '#2c6152',
       clase: 'RegistroAccion', unidad: 'm³', ayuda: 'Agua potable ahorrada (1 m³ = 1000 litros).',
       tipos: [
-        { id: 'fugas',    nombre: 'Reparación de fugas',   factor: 0.34 },
-        { id: 'lluvia',   nombre: 'Captación de lluvia',   factor: 0.34 },
-        { id: 'riego',    nombre: 'Riego eficiente',       factor: 0.34 },
-        { id: 'reuso',    nombre: 'Reúso de agua gris',    factor: 0.34 }
+        { id: 'fugas',  nombre: 'Reparación de fugas', factor: 0.34, fuente: 'porVerificar' },
+        { id: 'lluvia', nombre: 'Captación de lluvia', factor: 0.34, fuente: 'porVerificar' },
+        { id: 'riego',  nombre: 'Riego eficiente',     factor: 0.34, fuente: 'porVerificar' },
+        { id: 'reuso',  nombre: 'Reúso de agua gris',  factor: 0.34, fuente: 'porVerificar' }
       ]
     }
   };
+
+  /** La ficha completa de la fuente de un tipo de acción. */
+  function fuenteDe(tipo) {
+    return FUENTES[tipo?.fuente] || FUENTES.porVerificar;
+  }
 
   const CAT_LIST = Object.values(CATEGORIAS);
 
@@ -788,7 +874,7 @@ const DB = (() => {
   restaurar();
 
   return {
-    CATEGORIAS, CAT_LIST, tipoDe,
+    CATEGORIAS, CAT_LIST, tipoDe, FUENTES, fuenteDe,
     state, persistir,
     insignias, articulos, consejos, glosario,
     registrosOrdenados, enUltimosDias, sumaCO2,

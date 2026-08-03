@@ -569,3 +569,8 @@ body.presentando .content { padding-bottom: 96px; }
   transition: background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
 .explica-puntos i.is-aqui { background: var(--azul); transform: scale(1.45); }
+
+/* La columna de fuente de la tabla de factores (UC9): la sigla es corta y se
+   lee de un vistazo, así que no debe partirse en dos líneas. */
+.tabla-factores td .tag { white-space: nowrap; }
+.tabla-factores th:last-child, .tabla-factores td:last-child { width: 1%; }
