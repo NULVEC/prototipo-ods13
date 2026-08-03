@@ -35,6 +35,14 @@ const ALTO_MAX = 5.2;      // metros de escena para el primer lugar
 const ANCHO    = 1.15;
 const PASO     = 1.62;
 
+/* Alto aproximado de una etiqueta en píxeles, contando su relleno. Es el tope
+   por debajo del cual no puede subir, para que no se salga del lienzo. */
+const ALTO_ETIQUETA = 52;
+
+/* Cuánto baja una etiqueta de cada dos para no chocar con sus vecinas. Algo
+   más que su propio alto, que es lo que hace falta para separarlas. */
+const SALTO_ZIGZAG = 56;
+
 let vista = null;
 
 /* ==========================================================================
@@ -72,7 +80,10 @@ function montar(idContenedor, tabla, aliasPropio) {
   const v = crearVista(idContenedor, {
     fondo: FONDO,
     fov: 40,
-    distancia: Math.max(ancho * 1.05, 11),
+    /* El 1,18 es aire para las etiquetas: cuelgan por encima de la cima de su
+       columna, así que encuadrar justo hasta la columna más alta deja la del
+       primer puesto medio cortada contra el borde. */
+    distancia: Math.max(ancho * 1.05, 11) * 1.18,
     objetivo: new THREE.Vector3(0, ALTO_MAX * 0.42, 0),
     angulo: 0,
     altura: 0.20,
@@ -183,8 +194,23 @@ function montar(idContenedor, tabla, aliasPropio) {
       const el = etiquetas[i];
       if (cima.z > 1) { el.style.opacity = '0'; return; }
       el.style.opacity = '1';
-      el.style.transform =
-        `translate(-50%,-100%) translate(${(cima.x * 0.5 + 0.5) * w}px, ${(-cima.y * 0.5 + 0.5) * h}px)`;
+
+      /* Dos correcciones sobre la posición proyectada:
+
+         El tope de arriba, porque la etiqueta se dibuja hacia arriba desde su
+         anclaje y cerca del borde se saldría del lienzo. Antes que despegarse
+         de su columna, prefiere pegarse al borde y seguir leyéndose. Hace
+         falta aunque la cámara arranque bien encuadrada, porque se puede
+         girar hasta que el punto suba.
+
+         Y el zigzag: las columnas van bajando de altura, así que las
+         etiquetas bajan con ellas y cada una aterriza encima de la siguiente.
+         Bajando una de cada dos se abre el espacio, sin mover ninguna de su
+         columna ni tener que quitar puestos del podio. */
+      const escalon = (i % 2) ? SALTO_ZIGZAG : 0;
+      const x = (cima.x * 0.5 + 0.5) * w;
+      const y = Math.max(ALTO_ETIQUETA, (-cima.y * 0.5 + 0.5) * h + escalon);
+      el.style.transform = `translate(-50%,-100%) translate(${x}px, ${y}px)`;
       // Las de atrás se apagan un poco para que no compitan con las de adelante.
       el.style.filter = `opacity(${1 - Math.min(0.55, Math.max(0, cima.z - 0.965) * 22)})`;
     });

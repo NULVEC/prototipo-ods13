@@ -45,7 +45,7 @@ Screens.registro = {
         ${panelAcceso({
           titulo: 'Lo que no se mide,',
           resaltado: 'no se reduce.',
-          texto: 'Cree una cuenta para registrar sus acciones sostenibles y ver, en kilogramos, el CO₂ que deja de emitir cada semana.',
+          texto: 'Creá una cuenta para registrar lo que hacés y ver, en kilos, el CO₂ que dejás de soltar cada semana.',
           puntos: [
             { icono: 'reciclaje',  texto: 'Registrá reciclaje, transporte, energía y agua' },
             { icono: 'progreso',   texto: 'Vea el cálculo del CO₂ con la fórmula a la vista' },
@@ -255,8 +255,8 @@ Screens.acceso = {
               <div class="notice notice-info" style="margin-bottom:var(--s-6)">
                 ${Icon.get('escudo', 17)}
                 <div>
-                  Las cuentas son reales: se validan contra Firebase Authentication y sus registros
-                  quedan guardados en su cuenta. Si es la primera vez, cree una.
+                  Las cuentas son de verdad: se validan contra Firebase Authentication y lo que
+                  registrés queda guardado en tu cuenta. Si es tu primera vez, creá una.
                 </div>
               </div>` : `
               <div class="notice notice-warn" style="margin-bottom:var(--s-6)">
@@ -307,7 +307,7 @@ Screens.acceso = {
             </form>
 
             <p class="auth-alt">
-              ¿Primera vez aquí? <a href="#/registro">Cree una cuenta</a>
+              ¿Primera vez aquí? <a href="#/registro">Creá tu cuenta</a>
             </p>
           </div>
         </main>
@@ -390,7 +390,7 @@ Screens.acceso = {
       boton.setAttribute('aria-busy', 'true');
       try {
         await Nube.entrar(form.correo.value.trim(), form.clave.value);
-        UI.toast('Sesión iniciada', 'Cargando sus registros…', 'info', 2500);
+        UI.toast('¡Adentro!', 'Cargando tus registros…', 'info', 2500);
         // `onAuthStateChanged` descarga los datos y dibuja la pantalla.
       } catch (e) {
         fallo(Nube.traducir(e));
