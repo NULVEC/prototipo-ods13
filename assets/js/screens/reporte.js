@@ -141,6 +141,7 @@ Screens.reporte = {
                   <th scope="col">Acción</th>
                   <th scope="col" class="align-r">Factor</th>
                   <th scope="col">Fuente</th>
+                  <th scope="col">Origen</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,6 +161,9 @@ Screens.reporte = {
                         ? `<span class="tag tag-pine">${UI.esc(f.sigla)}</span>`
                         : `<span class="tag">${UI.esc(f.sigla)}</span>`}
                     </td>
+                    <td class="text-sm">${f.origen === 'Costa Rica'
+                        ? '<b style="color:var(--pine)">Costa Rica</b>'
+                        : `<span class="muted">${UI.esc(f.origen)}</span>`}</td>
                   </tr>`;
                 })).join('')}
               </tbody>
@@ -167,12 +171,15 @@ Screens.reporte = {
           </div>
           <div class="panel-foot">
             <p style="margin:0 0 var(--s-3)">Estos son los números por los que se multiplica lo que
-            registrás. El de electricidad es bajo porque casi toda la del país ya es renovable.</p>
+            registrás. Los de <b>Costa Rica</b> salen del Instituto Meteorológico Nacional; los demás
+            se toman de referencias internacionales porque el país no publica ese dato, y cada uno
+            explica abajo por qué.</p>
             <dl class="dl" style="margin:0">
               ${Object.values(DB.FUENTES).filter(f => f.verificada).map(f => `
                 <dt>${UI.esc(f.sigla)}</dt>
                 <dd>${UI.esc(f.autor)}. <i>${UI.esc(f.titulo)}</i>, ${f.anio}.
-                    ${f.url ? `<a href="${UI.esc(f.url)}" target="_blank" rel="noopener">Ver documento</a>` : ''}</dd>`).join('')}
+                    ${f.url ? `<a href="${UI.esc(f.url)}" target="_blank" rel="noopener">Ver documento</a>` : ''}
+                    ${f.porQue ? `<br><span class="text-sm muted">${UI.esc(f.porQue)}</span>` : ''}</dd>`).join('')}
             </dl>
             <p class="text-sm muted" style="margin:var(--s-3) 0 0">
               Los marcados <span class="tag">Por verificar</span> son valores de referencia razonables

@@ -59,7 +59,8 @@ const DB = (() => {
       autor: 'Instituto Meteorológico Nacional de Costa Rica',
       anio: 2024,
       url: 'https://cglobal.imn.ac.cr/documentos/publicaciones/factoresemision/factoresemision2024/FactoresEmision-GEI-2024.pdf',
-      verificada: true
+      verificada: true,
+      origen: 'Costa Rica'
     },
     defra: {
       sigla: 'DEFRA 2024',
@@ -67,7 +68,12 @@ const DB = (() => {
       autor: 'Department for Energy Security and Net Zero, Reino Unido',
       anio: 2024,
       url: 'https://www.gov.uk/government/collections/government-conversion-factors-for-company-reporting',
-      verificada: true
+      verificada: true,
+      origen: 'Internacional',
+      porQue: 'El IMN publica el CO₂ por litro de combustible, no por pasajero-kilómetro. ' +
+              'Pasar de uno a otro exigiría el rendimiento y la ocupación media de la flota ' +
+              'costarricense, que no están publicados, así que se usa la tabla británica, ' +
+              'que sí mide por pasajero-kilómetro sobre datos de flota reales.'
     },
     warm: {
       sigla: 'EPA WARM',
@@ -75,7 +81,11 @@ const DB = (() => {
       autor: 'United States Environmental Protection Agency',
       anio: 2023,
       url: 'https://www.epa.gov/waste-reduction-model',
-      verificada: true
+      verificada: true,
+      origen: 'Internacional',
+      porQue: 'Reciclar evita dos cosas: el metano del relleno y la fabricación con material ' +
+              'virgen. El IMN cubre lo primero, pero Costa Rica no publica lo segundo, que es ' +
+              'la mayor parte del ahorro. WARM es el modelo de referencia para eso.'
     },
     porVerificar: {
       sigla: 'Por verificar',
@@ -83,7 +93,8 @@ const DB = (() => {
       autor: '—',
       anio: null,
       url: '',
-      verificada: false
+      verificada: false,
+      origen: '—'
     }
   };
 
@@ -124,6 +135,26 @@ const DB = (() => {
   const warm = (reciclar, enterrar) =>
     redondear((enterrar - reciclar) * 1000 / TONELADA_CORTA);
 
+  /* --- Residuos con datos costarricenses ---------------------------------
+     El IMN publica cuánto metano suelta un kilo de residuo según cómo se
+     trate, y los potenciales de calentamiento para convertirlo a CO2e. Con
+     eso el compostaje se calcula entero con datos del país, sin recurrir a
+     un modelo de otro lado.
+
+     Los potenciales son los de la 14.ª edición (IPCC AR5). La edición
+     anterior usaba 21 y 310: mezclar los factores de una edición con los
+     potenciales de otra daría un número que no es de ninguna de las dos.
+     ---------------------------------------------------------------------- */
+  const PCG_CH4 = 28;
+  const PCG_N2O = 265;
+
+  const CH4_RELLENO = 0.0519;   // kg CH4 por kg de residuo enterrado
+  const CH4_COMPOST = 0.004;    // kg CH4 por kg compostado
+  const N2O_COMPOST = 0.00024;  // kg N2O por kg compostado (0,24 g)
+
+  const co2eRelleno = CH4_RELLENO * PCG_CH4;
+  const co2eCompost = CH4_COMPOST * PCG_CH4 + N2O_COMPOST * PCG_N2O;
+
   const CATEGORIAS = {
     reciclaje: {
       id: 'reciclaje', nombre: 'Reciclaje', icono: 'reciclaje', color: '#17493b', colorTexto: '#17493b',
@@ -140,8 +171,9 @@ const DB = (() => {
           calculo: 'Vidrio: reciclar −0,28 frente a enterrar 0,02' },
         { id: 'aluminio', nombre: 'Aluminio y latas',   factor: warm(-9.13, 0.02), fuente: 'warm',
           calculo: 'Latas de aluminio: reciclar −9,13 frente a enterrar 0,02' },
-        { id: 'organico', nombre: 'Orgánico a compost', factor: warm(-0.15, 0.50), fuente: 'warm',
-          calculo: 'Restos de comida: compostar −0,15 frente a enterrar 0,50' }
+        { id: 'organico', nombre: 'Orgánico a compost',
+          factor: redondear(co2eRelleno - co2eCompost), fuente: 'imn',
+          calculo: 'Metano de relleno 0,0519 kg frente a compostaje 0,004 kg, por kilo' }
       ]
     },
     transporte: {
