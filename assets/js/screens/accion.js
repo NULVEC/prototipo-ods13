@@ -113,12 +113,21 @@ Screens.accion = {
             </div>
           </div>
 
+          <!-- Esta advertencia es de las cosas más útiles que dice la pantalla:
+               explica por qué dos categorías enteras rinden casi nada en CO₂ en
+               este país, y que eso no las vuelve inútiles. Sin ella, alguien
+               podría pensar que el cálculo está roto. -->
           <div class="notice notice-warn" style="margin-top:var(--s-5)">
             ${Icon.get('alerta', 17)}
             <div>
-              <b>Ojo con la electricidad.</b> Casi toda la electricidad del país es renovable,
-              así que ahorrar un kWh evita aquí muy poco CO₂. Lo que sí sirve de esa categoría
-              es bajar la demanda pico y la presión sobre los embalses.
+              <b>Por qué agua y electricidad rinden tan poco aquí.</b>
+              Casi toda la electricidad de Costa Rica es renovable, así que ahorrar un kWh
+              evita muy poco CO₂. Y el agua se bombea con esa misma electricidad, por lo que
+              le pasa igual.
+              <br><br>
+              No significa que no valga la pena: bajar la demanda pico alivia los embalses, y
+              el agua importa por el recurso en sí, no por su huella. Solo que este sistema
+              mide CO₂, y en CO₂ el transporte y el reciclaje pesan mucho más.
             </div>
           </div>
         </aside>

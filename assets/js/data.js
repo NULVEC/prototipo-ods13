@@ -155,6 +155,19 @@ const DB = (() => {
   const co2eRelleno = CH4_RELLENO * PCG_CH4;
   const co2eCompost = CH4_COMPOST * PCG_CH4 + N2O_COMPOST * PCG_N2O;
 
+  /* --- Agua -------------------------------------------------------------
+     El CO2 del agua no está en el agua: está en la electricidad que se gasta
+     en captarla, potabilizarla y bombearla. Así que el factor es energía por
+     metro cúbico, multiplicada por el factor de la red costarricense.
+
+     La energía por metro cúbico no la publica Costa Rica; la literatura
+     internacional la sitúa entre 0,15 y 0,7 kWh/m³ según la fuente del agua
+     y el tamaño del sistema, y aquí se toma el valor medio de un sistema
+     mixto. Esa parte queda marcada como supuesto; la conversión a CO2, que
+     es la que depende del país, sí está verificada.
+     ---------------------------------------------------------------------- */
+  const AGUA_KWH_M3 = 0.5;
+
   const CATEGORIAS = {
     reciclaje: {
       id: 'reciclaje', nombre: 'Reciclaje', icono: 'reciclaje', color: '#17493b', colorTexto: '#17493b',
@@ -209,13 +222,20 @@ const DB = (() => {
     },
     agua: {
       id: 'agua', nombre: 'Agua', icono: 'agua', color: '#4e8f7c', colorTexto: '#2c6152',
-      clase: 'RegistroAccion', unidad: 'm³', ayuda: 'Agua potable ahorrada (1 m³ = 1000 litros).',
-      tipos: [
-        { id: 'fugas',  nombre: 'Reparación de fugas', factor: 0.34, fuente: 'porVerificar' },
-        { id: 'lluvia', nombre: 'Captación de lluvia', factor: 0.34, fuente: 'porVerificar' },
-        { id: 'riego',  nombre: 'Riego eficiente',     factor: 0.34, fuente: 'porVerificar' },
-        { id: 'reuso',  nombre: 'Reúso de agua gris',  factor: 0.34, fuente: 'porVerificar' }
-      ]
+      clase: 'RegistroAccion', unidad: 'm³',
+      ayuda: 'Agua potable ahorrada (1 m³ = 1000 litros). En CO₂ rinde poco, ' +
+             'porque el agua se bombea con electricidad casi toda renovable; ' +
+             'lo que sí ahorra es el recurso.',
+      tipos: (() => {
+        const f = redondear(AGUA_KWH_M3 * ELECTRICIDAD_KWH);
+        const calculo = `${AGUA_KWH_M3} kWh/m³ × ${ELECTRICIDAD_KWH} kg/kWh de la red del país`;
+        return [
+          { id: 'fugas',  nombre: 'Reparación de fugas', factor: f, fuente: 'porVerificar', calculo },
+          { id: 'lluvia', nombre: 'Captación de lluvia', factor: f, fuente: 'porVerificar', calculo },
+          { id: 'riego',  nombre: 'Riego eficiente',     factor: f, fuente: 'porVerificar', calculo },
+          { id: 'reuso',  nombre: 'Reúso de agua gris',  factor: f, fuente: 'porVerificar', calculo }
+        ];
+      })()
     }
   };
 
