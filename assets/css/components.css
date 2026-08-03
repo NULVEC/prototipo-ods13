@@ -39,7 +39,7 @@
 .btn-ghost   { --btn-bg: transparent; --btn-bd: transparent; --btn-fg: var(--ink-2); }
 .btn-ghost:hover { --btn-bg: var(--paper-sunken); --btn-fg: var(--ink); box-shadow: none; }
 
-.btn-danger  { --btn-bg: transparent; --btn-fg: var(--ember); --btn-bd: var(--ember); }
+.btn-danger  { --btn-bg: transparent; --btn-fg: var(--ember-700); --btn-bd: var(--ember); }
 .btn-danger:hover { --btn-bg: var(--ember); --btn-fg: #fff; }
 
 .btn-sm { min-height: 30px; padding: 6px var(--s-3); font-size: var(--t-sm); }
@@ -130,7 +130,11 @@
 .delta { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono);
   font-size: var(--t-sm); font-weight: 500; }
 .delta-up   { color: var(--pine); }
-.delta-down { color: var(--ember); }
+.delta-down { color: var(--ember-700); }
+/* Los usos de brasa como TEXTO van con la variante 700: la brasa normal se
+   queda en 4,1:1 sobre los fondos teñidos (fila propia, fila con hover,
+   avisos) y no alcanza AA. La brasa normal sigue en bordes y rellenos, que
+   se rigen por 3:1 y no por 4,5:1. */
 
 /* ==========================================================================
    FORMULARIOS
@@ -146,7 +150,7 @@
   color: var(--ink); margin-bottom: 6px;
 }
 .field .hint { display: block; font-size: var(--t-sm); color: var(--ink-3); margin-top: 5px; }
-.field .req { color: var(--ember); margin-left: 2px; }
+.field .req { color: var(--ember-700); margin-left: 2px; }
 
 .input, .select, .textarea {
   display: block; width: 100%;
@@ -216,7 +220,7 @@
   display: none; align-items: center; gap: 5px;
   font-size: var(--t-sm); margin-top: 6px; font-weight: 500;
 }
-.field.is-invalid .field-msg { display: flex; color: var(--ember); }
+.field.is-invalid .field-msg { display: flex; color: var(--ember-700); }
 .field-msg svg { flex: none; }
 
 /* Marca de campo correcto: una casilla dentro del control, sin ocupar línea
@@ -396,7 +400,7 @@ table.data .align-r { text-align: right; }
 }
 .feed .feed-icon.is-azul  { background: var(--azul-tint);  color: var(--azul);      border-color: #b9cdea; }
 .feed .feed-icon.is-ochre { background: var(--ochre-tint); color: var(--ochre-text); border-color: #ddcda2; }
-.feed .feed-icon.is-ember { background: var(--ember-tint); color: var(--ember);     border-color: #e6bcb1; }
+.feed .feed-icon.is-ember { background: var(--ember-tint); color: var(--ember-700); border-color: #e6bcb1; }
 .feed .feed-body { flex: 1; min-width: 0; }
 .feed .feed-body b { display: block; font-size: var(--t-body); font-weight: 600; }
 .feed .feed-body p { margin: 2px 0 0; font-size: var(--t-sm); color: var(--ink-2); }

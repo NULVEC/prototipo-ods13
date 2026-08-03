@@ -493,6 +493,7 @@ body.presentando .content { padding-bottom: 96px; }
 .con-ayuda { display: inline-flex; align-items: center; gap: 5px; }
 
 .ayuda {
+  position: relative;
   flex: none;
   display: inline-grid; place-items: center;
   width: 15px; height: 15px;
@@ -502,6 +503,16 @@ body.presentando .content { padding-bottom: 96px; }
   line-height: 1; cursor: help;
   vertical-align: middle;
   transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+/* El disco mide 15 px porque acompaña a un rótulo pequeño y no debe robarle
+   atención, pero 15 px es imposible de acertar con el dedo. Se le extiende el
+   área sensible hasta 44 px con un pseudoelemento: crece lo que se toca, no
+   lo que se ve, y sin empujar el texto de al lado. */
+.ayuda::after {
+  content: "";
+  position: absolute; top: 50%; left: 50%;
+  width: 44px; height: 44px;
+  transform: translate(-50%, -50%);
 }
 .ayuda:hover { background: var(--azul); color: #fff; }
 .ayuda:focus-visible { outline: none; box-shadow: var(--focus-ring); }

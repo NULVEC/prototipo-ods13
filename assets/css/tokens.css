@@ -27,7 +27,10 @@
   /* --- Tinta ------------------------------------------------------------ */
   --ink:            #12211c;  /* títulos y texto principal                   */
   --ink-2:          #3d4b45;  /* texto secundario                            */
-  --ink-3:          #66746c;  /* texto terciario / metadatos (AA sobre papel)*/
+  /* El terciario se usa sobre las tres superficies claras, así que se eligió
+     el tono más claro que aún pasa AA (4,5:1) contra la más oscura de ellas,
+     `--paper-sunken`. El valor anterior (#66746c) se quedaba en 3,71:1 ahí. */
+  --ink-3:          #58665e;  /* texto terciario / metadatos                 */
 
   /* --- Reglas ----------------------------------------------------------- */
   --line:           #ccd2c7;
