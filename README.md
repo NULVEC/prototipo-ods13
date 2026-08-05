@@ -1,5 +1,6 @@
 # Sistema de Registro y Seguimiento de Acciones Climáticas (ODS 13)
 https://prototipo-ods13.web.app
+
 Prototipo funcional de alta fidelidad. Universidad Fidélitas — **SC-302 Documentación
 del Software**, proyecto final integrador, subgrupo G6.
 
