@@ -115,12 +115,22 @@ jobs:
         # La clave se pasa por variable de entorno y se escribe con `printf`, no
         # con `echo` interpolando el secreto en la línea de comandos: así no
         # aparece en el registro de la ejecución ni en la lista de procesos.
+        #
+        # Se aceptan los dos nombres posibles a propósito: si el secreto se crea
+        # a mano se suele llamar FIREBASE_SERVICE_ACCOUNT, pero si lo crea
+        # `firebase init hosting:github` lo nombra con el id del proyecto
+        # pegado detrás. Aceptar ambos evita el fallo tonto de tener la
+        # credencial bien puesta y que el workflow no la encuentre.
         env:
-          CLAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          CLAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_PROTOTIPO_ODS13 }}
         run: |
           if [ -z "$CLAVE" ]; then
-            echo "Falta el secreto FIREBASE_SERVICE_ACCOUNT en el repositorio."
-            echo "Se crea en Configuración → Secrets and variables → Actions."
+            echo "No hay credenciales. Falta uno de estos secretos del repositorio:"
+            echo "  FIREBASE_SERVICE_ACCOUNT"
+            echo "  FIREBASE_SERVICE_ACCOUNT_PROTOTIPO_ODS13"
+            echo "Se crean en Settings → Secrets and variables → Actions,"
+            echo "con la clave JSON de una cuenta de servicio que tenga los"
+            echo "papeles Firebase Hosting Admin y Firebase Rules Admin."
             exit 1
           fi
           printf '%s' "$CLAVE" > "$RUNNER_TEMP/cuenta-servicio.json"
