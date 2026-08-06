@@ -1,0 +1,153 @@
+# ============================================================================
+# Despliegue a Firebase en cada push a main.
+#
+# Despliega DOS cosas, y las dos hacen falta:
+#
+#   hosting          los archivos del prototipo
+#   firestore:rules  quién puede leer y escribir qué
+#
+# Lo segundo es la razón de que este workflow exista en lugar de usar GitHub
+# Pages. Pages solo publica archivos estáticos: si las reglas se quedaran fuera
+# del despliegue, editar `firestore.rules` cambiaría el archivo del repositorio
+# mientras las reglas EN VIVO siguen siendo las viejas, sin que nada avise. Para
+# un sistema de permisos ese es el peor modo de fallo posible.
+# ============================================================================
+
+name: Desplegar a Firebase
+
+on:
+  push:
+    branches: [main]
+  # Permite lanzarlo a mano desde la pestaña Actions, sin tener que hacer un
+  # commit vacío para volver a desplegar.
+  workflow_dispatch:
+
+# Solo se le da lectura del repositorio: este workflow no escribe en el repo.
+permissions:
+  contents: read
+
+# Si llegan dos pushes seguidos, se cancela el despliegue viejo. Sin esto los
+# dos corren en paralelo y gana el que termine último, que puede ser el commit
+# anterior.
+concurrency:
+  group: desplegar-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # --------------------------------------------------------------------------
+  # 1. Comprobar antes de publicar.
+  #
+  # El proyecto no tiene compilación, así que nada avisaría de un archivo con un
+  # error de sintaxis: se subiría tal cual y la aplicación quedaría en blanco en
+  # producción. Estas comprobaciones no necesitan dependencias y tardan segundos.
+  # --------------------------------------------------------------------------
+  verificar:
+    name: Verificar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Sintaxis de JavaScript
+        run: |
+          fallos=0
+          for f in assets/js/*.js assets/js/screens/*.js; do
+            if node --check "$f"; then
+              echo "  ok  $f"
+            else
+              echo "  FALLA  $f"
+              fallos=$((fallos + 1))
+            fi
+          done
+          echo "---"
+          if [ "$fallos" -gt 0 ]; then
+            echo "$fallos archivo(s) con errores de sintaxis: no se despliega."
+            exit 1
+          fi
+          echo "Todos los archivos de JavaScript se analizan sin errores."
+
+      - name: JSON y manifiesto válidos
+        run: |
+          for f in manifest.webmanifest firebase.json firestore.indexes.json .firebaserc; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" \
+              && echo "  ok  $f" \
+              || { echo "  FALLA  $f"; exit 1; }
+          done
+
+      - name: Los archivos que carga index.html existen
+        # Un `src` mal escrito da un 404 silencioso en producción: el script no
+        # carga y la pantalla se queda a medias sin ningún error visible.
+        run: |
+          faltan=0
+          for ruta in $(grep -oE '(src|href)="(assets|manifest)[^"]*"' index.html \
+                        | sed -E 's/.*="([^"]*)"/\1/' | sort -u); do
+            if [ -f "$ruta" ]; then
+              echo "  ok  $ruta"
+            else
+              echo "  NO EXISTE  $ruta"
+              faltan=$((faltan + 1))
+            fi
+          done
+          echo "---"
+          [ "$faltan" -eq 0 ] || { echo "$faltan referencia(s) rota(s) en index.html."; exit 1; }
+
+  # --------------------------------------------------------------------------
+  # 2. Desplegar.
+  # --------------------------------------------------------------------------
+  desplegar:
+    name: Desplegar
+    needs: verificar
+    runs-on: ubuntu-latest
+    environment:
+      name: produccion
+      url: https://prototipo-ods13.web.app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Escribir las credenciales
+        # La clave se pasa por variable de entorno y se escribe con `printf`, no
+        # con `echo` interpolando el secreto en la línea de comandos: así no
+        # aparece en el registro de la ejecución ni en la lista de procesos.
+        env:
+          CLAVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$CLAVE" ]; then
+            echo "Falta el secreto FIREBASE_SERVICE_ACCOUNT en el repositorio."
+            echo "Se crea en Configuración → Secrets and variables → Actions."
+            exit 1
+          fi
+          printf '%s' "$CLAVE" > "$RUNNER_TEMP/cuenta-servicio.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/cuenta-servicio.json" >> "$GITHUB_ENV"
+
+      - name: Desplegar hosting y reglas de Firestore
+        run: |
+          npx --yes firebase-tools@15 deploy \
+            --only hosting,firestore:rules \
+            --project prototipo-ods13 \
+            --non-interactive \
+            --message "${GITHUB_SHA::7} — ${GITHUB_REF_NAME}"
+
+      - name: Borrar las credenciales
+        # `always()` para que la clave se borre también si el despliegue falla.
+        if: always()
+        run: rm -f "$RUNNER_TEMP/cuenta-servicio.json"
+
+      - name: Comprobar que el sitio publicado responde
+        # Un despliegue que termina bien pero deja el sitio caído tiene que
+        # marcar la ejecución en rojo, no en verde.
+        run: |
+          for intento in 1 2 3 4 5; do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' https://prototipo-ods13.web.app/)
+            echo "intento $intento: HTTP $codigo"
+            [ "$codigo" = "200" ] && exit 0
+            sleep 6
+          done
+          echo "El sitio no devolvió 200 después de cinco intentos."
+          exit 1

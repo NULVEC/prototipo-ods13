@@ -37,6 +37,36 @@ simulados guardados en el navegador. El prototipo nunca se queda en blanco.
 
 ---
 
+## Cómo se publica
+
+Cada push a `main` dispara `.github/workflows/desplegar.yml`, que primero comprueba y
+después despliega:
+
+| Paso | Qué hace |
+|---|---|
+| Verificar | Sintaxis de los 30 archivos de JavaScript, validez de los JSON y que exista cada archivo que carga `index.html` |
+| Desplegar | `firebase deploy --only hosting,firestore:rules` |
+| Comprobar | Que el sitio publicado devuelva 200 |
+
+Las dos cosas que despliega importan por igual. **Publicar solo los archivos estáticos
+no basta**: `firestore.rules` es lo que hace cumplir los permisos del lado del
+servidor, así que si se quedara fuera, editar las reglas cambiaría el archivo del
+repositorio mientras las reglas en vivo siguen siendo las viejas — sin que nada avise.
+Por eso el despliegue va a Firebase y no a GitHub Pages, que solo sirve archivos.
+
+El workflow necesita un secreto del repositorio, `FIREBASE_SERVICE_ACCOUNT`, con la
+clave JSON de una cuenta de servicio que tenga los papeles **Firebase Hosting Admin** y
+**Firebase Rules Admin**. Sin él el paso de despliegue falla con ese mensaje en lugar de
+quedarse en verde sin haber publicado nada.
+
+Para desplegar a mano, desde la máquina:
+
+```bash
+firebase deploy --only hosting,firestore:rules
+```
+
+---
+
 ## Cómo se usa en treinta segundos
 
 | Quiero | Cómo |
