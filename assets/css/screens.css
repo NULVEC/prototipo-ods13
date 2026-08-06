@@ -11,7 +11,7 @@
    ocupando el ancho completo. No es un "hero" de landing: es el encabezado
    de un reporte. */
 .home-head {
-  background: var(--pine-900); color: var(--pine-on-dark);
+  background: var(--deep); color: var(--on-deep);
   border-radius: var(--r-md); padding: var(--s-6) var(--s-8);
   margin-bottom: var(--s-6);
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-8);
@@ -20,21 +20,21 @@
 .home-head::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image:
-    linear-gradient(to right, rgba(194, 211, 203, .06) 1px, transparent 1px);
+    linear-gradient(to right, var(--deep-wash) 1px, transparent 1px);
   background-size: 28px 100%;
 }
 .home-head > * { position: relative; z-index: 1; }
-.home-head h1 { color: #f2f5f1; font-size: var(--t-h1); margin-bottom: var(--s-2); }
-.home-head p { color: var(--pine-on-dark); margin: 0; max-width: 56ch; font-size: var(--t-body); }
+.home-head h1 { color: var(--on-deep-strong); font-size: var(--t-h1); margin-bottom: var(--s-2); }
+.home-head p { color: var(--on-deep); margin: 0; max-width: 56ch; font-size: var(--t-body); }
 .home-head .streak {
-  text-align: right; border-left: 1px solid rgba(194, 211, 203, .2); padding-left: var(--s-8);
+  text-align: right; border-left: 1px solid var(--deep-line-firm); padding-left: var(--s-8);
 }
-.home-head .streak .label-micro { color: rgba(194, 211, 203, .6); }
+.home-head .streak .label-micro { color: var(--on-deep-soft); }
 .home-head .streak .n {
   font-family: var(--font-mono); font-size: 3rem; font-weight: 600; line-height: 1;
   color: var(--azul-bright); display: block; margin-top: var(--s-2);
 }
-.home-head .streak small { color: rgba(194, 211, 203, .7); font-size: var(--t-sm); }
+.home-head .streak small { color: var(--on-deep); font-size: var(--t-sm); }
 
 /* Artículos de información ambiental: lista editorial numerada por lectura,
    no rejilla de tarjetas idénticas. */
@@ -67,34 +67,34 @@
    pegado al hacer scroll para que el usuario vea el CO2 mientras escribe. */
 .calc {
   position: sticky; top: calc(var(--topbar-h) + var(--s-5));
-  background: var(--pine-900); color: var(--pine-on-dark);
+  background: var(--deep); color: var(--on-deep);
   border: 1px solid var(--pine-700); border-radius: var(--r-md);
   overflow: hidden;
 }
-.calc-head { padding: var(--s-4) var(--s-5); border-bottom: 1px solid rgba(194, 211, 203, .16); }
-.calc-head .label-micro { color: rgba(194, 211, 203, .6); }
+.calc-head { padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--deep-line); }
+.calc-head .label-micro { color: var(--on-deep-soft); }
 .calc-value {
   padding: var(--s-6) var(--s-5);
-  text-align: center; border-bottom: 1px solid rgba(194, 211, 203, .16);
+  text-align: center; border-bottom: 1px solid var(--deep-line);
 }
 .calc-value .n {
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
-  font-size: 3.25rem; font-weight: 600; line-height: 1; color: #f2f5f1;
+  font-size: 3.25rem; font-weight: 600; line-height: 1; color: var(--on-deep-strong);
   letter-spacing: -.03em; display: block;
   transition: color var(--dur-2) var(--ease);
 }
 .calc-value.is-live .n { color: var(--azul-bright); }
 .calc-value .u { font-family: var(--font-mono); font-size: var(--t-sm);
-  color: var(--pine-on-dark); letter-spacing: .08em; display: block; margin-top: var(--s-2); }
+  color: var(--on-deep); letter-spacing: .08em; display: block; margin-top: var(--s-2); }
 
 .calc-formula { padding: var(--s-4) var(--s-5); font-family: var(--font-mono); font-size: var(--t-sm); }
 .calc-formula .row { display: flex; justify-content: space-between; gap: var(--s-4); padding: 3px 0; }
-.calc-formula .row span:first-child { color: rgba(194, 211, 203, .68); }
-.calc-formula .row b { color: #eef2ee; font-weight: 500; }
-.calc-formula .row.is-total { border-top: 1px solid rgba(194, 211, 203, .2); margin-top: var(--s-2); padding-top: var(--s-3); }
+.calc-formula .row span:first-child { color: var(--on-deep-soft); }
+.calc-formula .row b { color: var(--on-deep-strong); font-weight: 500; }
+.calc-formula .row.is-total { border-top: 1px solid var(--deep-line-firm); margin-top: var(--s-2); padding-top: var(--s-3); }
 .calc-formula .row.is-total b { color: var(--azul-bright); }
 
-.calc-equiv { padding: var(--s-4) var(--s-5); background: rgba(194, 211, 203, .06);
+.calc-equiv { padding: var(--s-4) var(--s-5); background: var(--deep-wash);
   font-size: var(--t-sm); display: flex; gap: var(--s-3); align-items: flex-start; }
 .calc-equiv svg { flex: none; color: var(--azul-bright); margin-top: 2px; }
 
@@ -152,9 +152,10 @@
 }
 /* El orden en pantalla es 2 · 1 · 3, como en un podio real: la columna
    central es la más alta, no la primera del marcado. */
-.podium .step:nth-child(2) .stand { height: 92px; background: var(--pine); color: #eef4f0; border-color: var(--pine-700); }
-.podium .step:nth-child(1) .stand { height: 68px; background: var(--pine-mid); color: #0c2921; border-color: #3f7a68; }
-.podium .step:nth-child(3) .stand { height: 52px; background: var(--pine-tint); color: var(--pine-700); border-color: #b6ccc0; }
+.podium .step:nth-child(2) .stand { height: 92px; background: var(--pine); color: var(--pine-on); border-color: var(--pine-700); }
+.podium .step:nth-child(1) .stand { height: 68px; background: var(--pine-mid); color: var(--deep);
+  border-color: color-mix(in srgb, var(--pine-mid) 70%, var(--deep)); }
+.podium .step:nth-child(3) .stand { height: 52px; background: var(--pine-tint); color: var(--pine-700); border-color: var(--pine-tint-line); }
 .podium .stand .pos { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 600; }
 .podium .who { padding-top: var(--s-3); border-top: 1px solid var(--line-strong); }
 .podium .who b { display: block; font-size: var(--t-sm); font-weight: 600; }
@@ -166,7 +167,7 @@
 .rank-me {
   display: flex; align-items: center; gap: var(--s-4);
   padding: var(--s-4) var(--s-5); background: var(--azul-tint);
-  border: 1px solid #b9cdea; border-radius: var(--r-sm);
+  border: 1px solid var(--azul-tint-line); border-radius: var(--r-sm);
 }
 .rank-me .pos { font-family: var(--font-mono); font-size: 1.75rem; font-weight: 600; color: var(--azul-700); }
 .rank-me .txt { flex: 1; min-width: 0; }
@@ -185,7 +186,7 @@
 .profile-id .who p { margin: 0; font-family: var(--font-mono); font-size: var(--t-sm); color: var(--ink-3); }
 
 .danger-zone {
-  border: 1px solid #e6bcb1; border-radius: var(--r-md);
+  border: 1px solid var(--ember-tint-line); border-radius: var(--r-md);
   background: var(--ember-tint); padding: var(--s-5);
 }
 .danger-zone h3 { color: var(--ember-700); margin-bottom: var(--s-2); }
@@ -197,22 +198,134 @@
 .dl dd { margin: 0; font-size: var(--t-body); font-family: var(--font-mono); }
 
 /* ==========================================================================
+   ADMINISTRACIÓN — panel de control (papel de administrador)
+
+   La cabecera va sobre la superficie profunda, igual que la de Inicio, pero
+   con el borde azul de lo interactivo a la izquierda: es una pantalla desde la
+   que se escribe algo que van a leer los demás, y tiene que sentirse distinta
+   de las nueve donde uno solo mira lo suyo.
+   ========================================================================== */
+
+.admin-cabecera {
+  display: flex; align-items: flex-start; gap: var(--s-5); flex-wrap: wrap;
+  padding: var(--s-6) var(--s-8);
+  background: var(--deep); color: var(--on-deep);
+  border: 1px solid var(--deep-line);
+  border-left: 3px solid var(--azul-bright);
+  border-radius: var(--r-md);
+  position: relative; overflow: hidden;
+}
+.admin-cabecera::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: linear-gradient(to right, var(--deep-wash) 1px, transparent 1px);
+  background-size: 28px 100%;
+}
+.admin-cabecera > * { position: relative; z-index: 1; }
+.admin-cabecera h1 { color: var(--on-deep-strong); }
+.admin-cabecera .label-micro { color: var(--on-deep-soft); }
+
+.admin-sello {
+  flex: none; display: grid; place-items: center;
+  width: 52px; height: 60px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: color-mix(in srgb, var(--azul-bright) 18%, transparent);
+  color: var(--azul-bright);
+}
+
+.admin-estado {
+  flex: none; max-width: 34ch;
+  padding-left: var(--s-5);
+  border-left: 1px solid var(--deep-line);
+}
+
+/* --- Fichas de contenido editables ------------------------------------- */
+.admin-fichas { list-style: none; margin: 0; padding: 0; counter-reset: ficha; }
+.admin-ficha {
+  display: grid; grid-template-columns: 54px minmax(0, 1fr) 40px;
+  gap: var(--s-4);
+  padding: var(--s-5) 0;
+  border-top: 1px solid var(--line);
+}
+.admin-ficha:first-child { border-top: 0; padding-top: 0; }
+
+.admin-ficha-num {
+  display: flex; flex-direction: column; align-items: center; gap: var(--s-2);
+}
+.admin-ficha-num > .mono {
+  font-size: 1.25rem; font-weight: 600; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.admin-ficha-orden { display: flex; flex-direction: column; gap: 2px; }
+.admin-ficha-orden .btn { width: 28px; height: 24px; }
+
+.admin-ficha-campos { min-width: 0; }
+.admin-ficha > [data-quitar] { align-self: start; }
+
+/* La barra de publicar es lo único que escribe fuera de esta sesión: se queda
+   a la vista al desplazarse para que nunca haya que buscarla. */
+.admin-barra-guardar {
+  display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap;
+  position: sticky; bottom: 0;
+  background: var(--paper-sunken);
+}
+
+.lista-problemas {
+  margin: var(--s-3) 0 0; padding-left: var(--s-5);
+  font-size: var(--t-sm); color: var(--ember-ink); line-height: 1.7;
+}
+
+@media (max-width: 700px) {
+  .admin-cabecera { padding: var(--s-5); }
+  .admin-estado { padding-left: 0; border-left: 0; max-width: none;
+    border-top: 1px solid var(--deep-line); padding-top: var(--s-4); }
+  .admin-ficha { grid-template-columns: minmax(0, 1fr) 40px; gap: var(--s-3); }
+  .admin-ficha-num {
+    grid-column: 1 / -1; flex-direction: row; justify-content: flex-start;
+    align-items: center; gap: var(--s-3);
+  }
+  .admin-ficha-orden { flex-direction: row; }
+}
+
+/* ==========================================================================
    IMPRESIÓN — el reporte de emisiones (UC9) debe poder imprimirse limpio
    ========================================================================== */
 @media print {
-  .sidebar, .topbar, .ribbon, .toast-stack, .scrim,
+  /* El papel siempre es blanco. Si alguien tiene puesto el tema oscuro y le da
+     a imprimir, hay que devolver la paleta clara: si no, el reporte sale como
+     un rectángulo negro que se come el tóner y no se lee. Se reescriben los
+     tokens en lugar de cada regla, que es toda la ventaja de tenerlos. */
+  :root, :root[data-tema="oscuro"] {
+    --paper: #fff; --paper-raised: #fff; --paper-sunken: #f2f2ee; --paper-pure: #fff;
+    --ink: #111; --ink-2: #333; --ink-3: #555;
+    --line: #ccc; --line-strong: #999;
+    --deep: #fff; --deep-raised: #fff;
+    --deep-line: #ccc; --deep-line-soft: #e2e2e2; --deep-line-firm: #999;
+    --deep-wash: #f7f7f4; --deep-hover: transparent;
+    --on-deep-strong: #111; --on-deep: #333; --on-deep-soft: #555;
+    --pine-ink: #14432f; --azul-ink: #143b73; --ochre-ink: #6a4a0d; --ember-ink: #7c2a19;
+    --link: #143b73; --grid-ink: transparent;
+    --shadow-1: none; --shadow-2: none; --shadow-pop: none; --shadow-lift: none;
+  }
+
+  .sidebar, .topbar, .ribbon, .toast-stack, .scrim, .presenta-barra,
   .period-switch, .section-aside .btn, #r-descargar, #r-imprimir { display: none !important; }
   .app-shell { display: block; }
   .content { padding: 0; max-width: none; background: none; }
   .panel, .table-wrap, .report-head, .readout { break-inside: avoid; box-shadow: none; }
+  .panel, .table-wrap, .report-head { border-color: #bbb; }
   body { background: #fff; }
   a[href^="#"]::after { content: ""; }
+  /* Las referencias sí se imprimen con su dirección: en papel, un enlace sin
+     URL es una palabra subrayada que no lleva a ninguna parte. */
+  .panel-foot a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 10px; word-break: break-all; }
+  /* Los lienzos 3D no tienen sentido en papel y salen como manchas oscuras. */
+  .escena-panel, .confeti-lienzo { display: none !important; }
 }
 
 @media (max-width: 900px) {
   .home-head { grid-template-columns: minmax(0, 1fr); padding: var(--s-5); }
   .home-head .streak { text-align: left; border-left: 0; padding-left: 0;
-    border-top: 1px solid rgba(194, 211, 203, .2); padding-top: var(--s-4); }
+    border-top: 1px solid var(--deep-line-firm); padding-top: var(--s-4); }
   .calc { position: static; }
   .choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .article { grid-template-columns: minmax(0, 1fr); gap: var(--s-2); }
@@ -241,52 +354,60 @@
 .escena-lienzo {
   position: relative;
   min-height: 400px;
-  background: var(--pine-900);
+  background: var(--deep);
   display: grid; place-items: center;
 }
 .escena-lienzo.is-alto  { min-height: 460px; }
 .escena-lienzo.is-podio { min-height: 420px; }
-.escena-lienzo canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.escena-lienzo canvas {
+  display: block; width: 100%; height: 100%; touch-action: none;
+  /* Al arrastrar no debe seleccionarse el texto de alrededor ni aparecer el
+     rectángulo azul de selección: se está girando un objeto, no leyendo. */
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* `vista3d.js` pone esta clase mientras el dedo o el ratón están abajo. */
+.escena-lienzo canvas.arrastrando { cursor: grabbing; }
 .escena-cargando {
   font-family: var(--font-mono); font-size: var(--t-micro);
   letter-spacing: .12em; text-transform: uppercase;
-  color: rgba(194, 211, 203, .5); margin: 0;
+  color: var(--on-deep-soft); margin: 0;
 }
 
 .escena-sin3d {
-  padding: var(--s-8); text-align: center; color: var(--pine-on-dark);
+  padding: var(--s-8); text-align: center; color: var(--on-deep);
   max-width: 46ch;
 }
 .escena-sin3d svg { margin: 0 auto var(--s-4); color: var(--azul-bright); }
 .escena-sin3d p { font-size: var(--t-sm); margin: 0; }
-.escena-sin3d b { color: #eef2ee; }
+.escena-sin3d b { color: var(--on-deep-strong); }
 
 .escena-datos {
   padding: var(--s-6) var(--s-6);
-  border-left: 1px solid rgba(194, 211, 203, .16);
+  border-left: 1px solid var(--deep-line);
   display: flex; flex-direction: column; justify-content: center;
 }
-.escena-datos .label-micro { color: rgba(194, 211, 203, .55); }
+.escena-datos .label-micro { color: var(--on-deep-soft); }
 .escena-cifra {
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
   font-size: 3rem; font-weight: 600; line-height: 1; letter-spacing: -.03em;
-  color: #f2f5f1; margin: var(--s-3) 0 var(--s-2);
+  color: var(--on-deep-strong); margin: var(--s-3) 0 var(--s-2);
 }
 .escena-cifra .u { font-size: .34em; color: var(--azul-bright); margin-left: 6px; }
-.escena-lado { font-size: var(--t-sm); color: var(--pine-on-dark); margin: 0 0 var(--s-5); }
+.escena-lado { font-size: var(--t-sm); color: var(--on-deep); margin: 0 0 var(--s-5); }
 .escena-lado b { color: var(--azul-bright); font-family: var(--font-mono); }
 
 .escena-equiv {
   list-style: none; margin: 0 0 var(--s-5); padding: 0;
-  border-top: 1px solid rgba(194, 211, 203, .16);
+  border-top: 1px solid var(--deep-line);
 }
 .escena-equiv li {
   display: flex; align-items: center; gap: var(--s-3);
-  padding: var(--s-3) 0; font-size: var(--t-sm); color: var(--pine-on-dark);
-  border-bottom: 1px solid rgba(194, 211, 203, .1);
+  padding: var(--s-3) 0; font-size: var(--t-sm); color: var(--on-deep);
+  border-bottom: 1px solid var(--deep-line);
 }
 .escena-equiv svg { flex: none; color: var(--azul-bright); }
-.escena-equiv b { margin-left: auto; color: #f2f5f1; }
+.escena-equiv b { margin-left: auto; color: var(--on-deep-strong); }
 
 /* Punto de color que ata cada categoría con el color de su copa en el bosque. */
 .escena-equiv .punto {
@@ -296,17 +417,17 @@
 
 .escena-nota {
   font-size: var(--t-micro); line-height: 1.6;
-  color: rgba(194, 211, 203, .6); margin: 0;
+  color: var(--on-deep-soft); margin: 0;
 }
 
-.escena-pie { background: rgba(194, 211, 203, .06); border-top-color: rgba(194, 211, 203, .16);
-  color: rgba(194, 211, 203, .68); }
+.escena-pie { background: var(--deep-wash); border-top-color: var(--deep-line);
+  color: var(--on-deep-soft); }
 
 /* Distintivo "3D" en la cabecera de los paneles que llevan escena. */
 .tag-3d {
   display: inline-flex; align-items: center; gap: 4px;
-  background: linear-gradient(100deg, var(--azul) 0%, #2f7d5f 100%);
-  color: #eaf2ff; border-color: transparent; letter-spacing: .08em;
+  background: linear-gradient(100deg, var(--azul) 0%, var(--pine) 100%);
+  color: var(--azul-on); border-color: transparent; letter-spacing: .08em;
 }
 
 /* --------------------------------------------------------------------------
@@ -323,8 +444,8 @@
   position: absolute; top: 0; left: 0;
   display: flex; flex-direction: column; align-items: center; gap: 1px;
   padding: var(--s-2) var(--s-3);
-  background: rgba(8, 26, 21, .82);
-  border: 1px solid rgba(194, 211, 203, .2);
+  background: color-mix(in srgb, var(--deep) 86%, transparent);
+  border: 1px solid var(--deep-line-firm);
   border-radius: var(--r-md);
   backdrop-filter: blur(3px);
   white-space: nowrap;
@@ -332,19 +453,19 @@
 }
 .podio-etiqueta .p {
   font-family: var(--font-mono); font-size: var(--t-micro);
-  color: rgba(194, 211, 203, .6);
+  color: var(--on-deep-soft);
 }
-.podio-etiqueta b { font-size: var(--t-sm); color: #f2f5f1; }
+.podio-etiqueta b { font-size: var(--t-sm); color: var(--on-deep-strong); }
 .podio-etiqueta .kg {
   font-family: var(--font-mono); font-size: var(--t-micro);
   color: var(--azul-bright);
 }
 .podio-etiqueta.is-yo {
-  background: rgba(29, 78, 155, .88);
+  background: color-mix(in srgb, var(--azul) 90%, transparent);
   border-color: var(--azul-bright);
   box-shadow: 0 0 0 1px var(--azul-bright), 0 6px 18px -6px rgba(0, 0, 0, .7);
 }
-.podio-etiqueta.is-yo .p, .podio-etiqueta.is-yo .kg { color: #cfe1ff; }
+.podio-etiqueta.is-yo .p, .podio-etiqueta.is-yo .kg { color: #d3e4ff; }
 
 /* Veredicto del podio: el "cómo vas" en la cabecera del panel. */
 .presenta-veredicto {
@@ -356,7 +477,7 @@
   .escena-grid, .escena-grid.is-bosque { grid-template-columns: minmax(0, 1fr); }
   .escena-lienzo { min-height: 300px; }
   .escena-lienzo.is-alto, .escena-lienzo.is-podio { min-height: 330px; }
-  .escena-datos { border-left: 0; border-top: 1px solid rgba(194, 211, 203, .16); padding: var(--s-5); }
+  .escena-datos { border-left: 0; border-top: 1px solid var(--deep-line); padding: var(--s-5); }
   .escena-cifra { font-size: 2.25rem; }
   .presenta-veredicto { margin-left: 0; flex-basis: 100%; }
   .podio-etiqueta { padding: 5px 7px; }
@@ -416,7 +537,7 @@
   display: flex; align-items: center; gap: var(--s-3);
   padding: var(--s-2) var(--s-3);
   max-width: calc(100vw - var(--s-8));
-  background: var(--pine-900); color: var(--pine-on-dark);
+  background: var(--deep); color: var(--on-deep);
   border: 1px solid var(--pine-700);
   border-radius: 999px;
   box-shadow: var(--shadow-pop);
@@ -426,55 +547,55 @@
   flex: none;
   display: grid; place-items: center;
   width: 32px; height: 32px;
-  background: rgba(194, 211, 203, .1);
-  color: #eef2ee;
+  background: var(--deep-line);
+  color: var(--on-deep-strong);
   border: 0; border-radius: 50%;
   cursor: pointer;
   transition: background var(--dur-1) var(--ease);
 }
 .presenta-btn:hover { background: var(--azul); }
 .presenta-btn:focus-visible { outline: 2px solid var(--azul-bright); outline-offset: 2px; }
-.presenta-cerrar { background: transparent; color: rgba(194, 211, 203, .55); }
-.presenta-cerrar:hover { background: var(--ember); color: #fff; }
+.presenta-cerrar { background: transparent; color: var(--on-deep-soft); }
+.presenta-cerrar:hover { background: var(--ember); color: var(--ember-on); }
 
 .presenta-centro {
   display: flex; align-items: center; gap: var(--s-2);
   min-width: 0;
 }
 .presenta-centro b {
-  color: #f2f5f1; font-size: var(--t-sm);
+  color: var(--on-deep-strong); font-size: var(--t-sm);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .presenta-uc {
   flex: none;
   font-family: var(--font-mono); font-size: var(--t-micro);
   padding: 2px 6px; border-radius: var(--r-xs);
-  background: var(--azul); color: #eaf2ff;
+  background: var(--azul); color: var(--azul-on);
 }
 .presenta-cuenta {
   flex: none;
   font-family: var(--font-mono); font-size: var(--t-micro);
-  color: rgba(194, 211, 203, .55);
+  color: var(--on-deep-soft);
 }
 
 .presenta-puntos { display: flex; gap: 5px; flex: none; }
 .presenta-puntos i {
   width: 6px; height: 6px; border-radius: 50%;
-  background: rgba(194, 211, 203, .28);
+  background: var(--deep-line-firm);
   transition: background var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
 .presenta-puntos i.is-aqui { background: var(--azul-bright); transform: scale(1.5); }
 
 .presenta-proximo {
   flex: none;
-  font-size: var(--t-micro); color: rgba(194, 211, 203, .5);
-  padding-left: var(--s-3); border-left: 1px solid rgba(194, 211, 203, .18);
+  font-size: var(--t-micro); color: var(--on-deep-soft);
+  padding-left: var(--s-3); border-left: 1px solid var(--deep-line-firm);
 }
-.presenta-proximo b { color: rgba(194, 211, 203, .85); font-weight: 500; }
+.presenta-proximo b { color: var(--on-deep); font-weight: 500; }
 
 /* El caso de uso se resalta mientras se presenta: es lo que se está mostrando.
    Y el contenido deja sitio abajo para que la barra no tape la última fila. */
-body.presentando .topbar .uc-tag { background: var(--azul); color: #eaf2ff; border-color: var(--azul); }
+body.presentando .topbar .uc-tag { background: var(--azul); color: var(--azul-on); border-color: var(--azul); }
 body.presentando .content { padding-bottom: 96px; }
 
 @media (max-width: 860px) {
@@ -514,15 +635,15 @@ body.presentando .content { padding-bottom: 96px; }
   width: 44px; height: 44px;
   transform: translate(-50%, -50%);
 }
-.ayuda:hover { background: var(--azul); color: #fff; }
+.ayuda:hover { background: var(--azul); color: var(--azul-on); }
 .ayuda:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 /* Sobre los paneles oscuros el botón se invierte para no desaparecer. */
 .panel-dark .ayuda, .home-head .ayuda, .calc .ayuda, .escena-datos .ayuda {
-  background: rgba(194, 211, 203, .22); color: #eef2ee;
+  background: var(--deep-line-firm); color: var(--on-deep-strong);
 }
 .panel-dark .ayuda:hover, .home-head .ayuda:hover,
-.calc .ayuda:hover, .escena-datos .ayuda:hover { background: var(--azul-bright); color: #0c2921; }
+.calc .ayuda:hover, .escena-datos .ayuda:hover { background: var(--azul-bright); color: var(--deep); }
 
 /* Las dos capas de la explicación: la frase de un vistazo y el desarrollo. */
 .glos-corto {

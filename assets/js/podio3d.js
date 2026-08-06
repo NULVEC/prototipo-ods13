@@ -14,9 +14,10 @@
    leen nítidas, se pueden seleccionar y las lee un lector de pantalla.
    ========================================================================= */
 
-import { THREE, crearVista, iluminar, suavizar } from './vista3d.js';
+import { THREE, crearVista, iluminar, suavizar, tokenColor } from './vista3d.js';
 
-const FONDO  = 0x0a2019;
+/* Igual que en el bosque: el fondo del lienzo lo pone el tema activo. */
+const fondoDelTema = () => tokenColor('--deep', 0x0a2019);
 const SUELO  = 0x13312a;
 
 const METAL = {
@@ -76,6 +77,8 @@ function montar(idContenedor, tabla, aliasPropio) {
   puestos.forEach(p => { p.x -= centro; });
 
   const ancho = x;
+
+  const FONDO = fondoDelTema();
 
   const v = crearVista(idContenedor, {
     fondo: FONDO,
@@ -181,6 +184,13 @@ function montar(idContenedor, tabla, aliasPropio) {
   let tiempo = animar ? 0 : 99;
   const cima = new THREE.Vector3();
 
+  /* Este `alDibujar` hace dos cosas distintas: crecer las columnas (que se
+     acaba) y pegar cada etiqueta a la cima de la suya (que hay que rehacer
+     cada vez que la cámara se mueve). Se ejecuta entero siempre, pero solo
+     pide otro cuadro mientras las columnas siguen creciendo; el resto de las
+     veces lo pide quien movió la cámara. */
+  const finCrecida = DURACION + (columnas.length - 1) * 0.09 + 0.05;
+
   v.alDibujar = dt => {
     tiempo += dt;
     const w = cont.clientWidth, h = cont.clientHeight;
@@ -193,7 +203,6 @@ function montar(idContenedor, tabla, aliasPropio) {
       cima.set(c.x, c.alto * p + 0.35, 0).project(camara);
       const el = etiquetas[i];
       if (cima.z > 1) { el.style.opacity = '0'; return; }
-      el.style.opacity = '1';
 
       /* Dos correcciones sobre la posición proyectada:
 
@@ -212,8 +221,14 @@ function montar(idContenedor, tabla, aliasPropio) {
       const y = Math.max(ALTO_ETIQUETA, (-cima.y * 0.5 + 0.5) * h + escalon);
       el.style.transform = `translate(-50%,-100%) translate(${x}px, ${y}px)`;
       // Las de atrás se apagan un poco para que no compitan con las de adelante.
-      el.style.filter = `opacity(${1 - Math.min(0.55, Math.max(0, cima.z - 0.965) * 22)})`;
+      /* Las de atrás se apagan un poco para que no compitan con las de
+         adelante. Va en `opacity` y no en un filtro: son la misma propiedad
+         que ya se usa para esconder las que quedan detrás de la cámara, y
+         mezclar las dos hacía que una etiqueta oculta siguiera atenuándose. */
+      el.style.opacity = String(1 - Math.min(0.55, Math.max(0, cima.z - 0.965) * 22));
     });
+
+    return tiempo < finCrecida;
   };
 
   v.arrancar();

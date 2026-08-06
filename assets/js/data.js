@@ -267,7 +267,10 @@ const DB = (() => {
     desde: '2026-03-14',
     notificaciones: { recordatorio: true, logros: true, resumen: true, comunidad: false },
     frecuencia: 'diaria',
-    hora: '19:00'
+    hora: '19:00',
+    // Privacidad del UC10: participar en la comparativa y mostrar la provincia.
+    enComunidad: true,
+    mostrarProvincia: true
   };
 
   /* ------------------------------------------------------------------ */
@@ -420,11 +423,21 @@ const DB = (() => {
     factor: {
       termino: 'Factor de emisión',
       corto: 'Cuánto CO₂ ahorra cada unidad de lo que hiciste.',
-      largo: `Es el número por el que se multiplica lo que registraste.
-              Reciclar un kilo de aluminio evita 8,14 kg de CO₂, así que su factor
-              es 8,14. Un kilómetro en bus evita 0,103 kg, así que su factor es
-              0,103.
-              La cuenta siempre es la misma: lo que hiciste × su factor = CO₂ evitado.`
+      /* Los dos ejemplos se LEEN del catálogo en lugar de escribirse a mano.
+         Estaban escritos —"8,14" para el aluminio y "0,103" para el bus— y se
+         quedaron viejos cuando los factores se recalcularon con las fuentes
+         verificadas: el glosario le enseñaba a la gente unos números y la
+         aplicación calculaba con otros. Derivándolos, no pueden volver a
+         desincronizarse. */
+      largo: () => {
+        const alu = tipoDe('reciclaje', 'aluminio').factor;
+        const bus = tipoDe('transporte', 'autobus').factor;
+        return `Es el número por el que se multiplica lo que registraste.
+              Reciclar un kilo de aluminio evita ${fmt.n(alu, 3)} kg de CO₂, así que
+              su factor es ${fmt.n(alu, 3)}. Un kilómetro en bus evita
+              ${fmt.n(bus, 3)} kg, así que su factor es ${fmt.n(bus, 3)}.
+              La cuenta siempre es la misma: lo que hiciste × su factor = CO₂ evitado.`;
+      }
     },
     huella: {
       termino: 'Huella de carbono',
@@ -526,28 +539,86 @@ const DB = (() => {
     };
     return [
       { id: 'N-1', tipo: 'recordatorio', origen: 'sistema', leida: false, fecha: h(0, '19:00'),
-        titulo: 'Aún no registra acciones de hoy',
-        texto: 'Lleva 12 días seguidos con al menos un registro. Un trayecto en autobús o el reciclaje del día mantienen la racha.' },
+        titulo: 'Todavía no registraste nada hoy',
+        texto: 'Llevás 12 días seguidos con al menos un registro. Un viaje en bus o el reciclaje del día te mantienen la racha.' },
       { id: 'N-2', tipo: 'logro', origen: 'sistema', leida: false, fecha: h(1, '08:12'),
         titulo: 'Insignia obtenida: Ruta limpia',
-        texto: 'Acumuló 150 km en medios de transporte bajos en carbono desde marzo.' },
+        texto: 'Juntaste 150 km en medios de transporte bajos en carbono desde marzo.' },
       { id: 'N-3', tipo: 'resumen', origen: 'sistema', leida: false, fecha: h(2, '07:00'),
         titulo: 'Resumen semanal disponible',
-        texto: 'La semana pasada evitó 9,4 kg de CO₂ con 11 registros. Es un 18 % más que la semana anterior.' },
+        texto: 'La semana pasada evitaste 9,4 kg de CO₂ con 11 registros. Un 18 % más que la anterior.' },
       { id: 'N-4', tipo: 'recordatorio', origen: 'sistema', leida: true, fecha: h(3, '19:00'),
         titulo: 'Faltan 8 días para cerrar el mes',
-        texto: 'Va en 31,2 kg de 45 kg de su meta mensual. Necesita cerca de 1,7 kg diarios para alcanzarla.' },
+        texto: 'Vas en 31,2 kg de los 45 de tu meta del mes. Con unos 1,7 kg por día llegás.' },
       { id: 'N-5', tipo: 'alerta', origen: 'sistema', leida: true, fecha: h(5, '11:30'),
         titulo: 'Revisá la cantidad de un registro',
         texto: 'El registro RA-1043 dice 148 kg de papel reciclado en un solo día. Confirmá la cantidad o corregila.' },
       { id: 'N-6', tipo: 'logro', origen: 'sistema', leida: true, fecha: h(9, '16:45'),
         titulo: 'Insignia obtenida: Cien kilos',
-        texto: 'Superó los 100 kg de CO₂ evitados desde que creó la cuenta.' },
+        texto: 'Pasaste los 100 kg de CO₂ evitados desde que creaste la cuenta.' },
       { id: 'N-7', tipo: 'resumen', origen: 'sistema', leida: true, fecha: h(14, '07:00'),
         titulo: 'Nuevo contenido en información ambiental',
-        texto: 'Se agregó la ficha sobre el peso del transporte en las emisiones nacionales.' }
+        texto: 'Se agregó la ficha sobre cuánto pesa el transporte en las emisiones del país.' }
     ];
   }
+
+  /* ================================================================== */
+  /* PERMISOS                                                            */
+  /*                                                                     */
+  /* Dos papeles, y la diferencia entre ellos no es cosmética: el         */
+  /* administrador puede escribir contenido que van a LEER todas las      */
+  /* cuentas (la información ambiental del UC3) y puede retirar una fila  */
+  /* de la comparativa comunitaria.                                       */
+  /*                                                                     */
+  /* De dónde sale el papel — y esto es lo importante:                    */
+  /*                                                                     */
+  /* Del correo del token de Firebase Authentication, no de un campo      */
+  /* guardado en la base. Si el papel viviera en `usuarios/{uid}.rol`,    */
+  /* cualquiera podría escribir su propio documento y ascenderse, porque  */
+  /* las reglas le dan permiso de escritura sobre su propio perfil. El    */
+  /* correo del token lo firma Firebase y el cliente no lo puede tocar,   */
+  /* así que las MISMAS reglas de `firestore.rules` comprueban esta misma */
+  /* lista y rechazan del lado del servidor lo que la interfaz esconda.   */
+  /*                                                                     */
+  /* Esconder un botón no es un permiso. El permiso está en las reglas;   */
+  /* lo de aquí solo evita ofrecer algo que después va a fallar.          */
+  /* ================================================================== */
+  const ADMINISTRADORES = ['ecoto70818@ufide.ac.cr'];
+
+  /* Qué puede hacer cada papel. Se declara por capacidad y no por papel
+     para que agregar un tercer papel —un profesor que revisa sin editar,
+     por ejemplo— no obligue a repasar veinte condicionales sueltos. */
+  const CAPACIDADES = {
+    admin: [
+      'admin.entrar',        // ver la pantalla de administración
+      'contenido.editar',    // publicar la información ambiental del UC3
+      'comunidad.moderar',   // retirar una fila de la comparativa
+      'factores.auditar'     // ver el estado de verificación de los factores
+    ],
+    participante: []
+  };
+
+  const normalizar = c => String(c || '').trim().toLowerCase();
+
+  /** El papel de la sesión actual. */
+  function rol() {
+    if (!state.autenticado) return 'participante';
+    return ADMINISTRADORES.includes(normalizar(state.usuario?.correo))
+      ? 'admin' : 'participante';
+  }
+
+  const esAdmin = () => rol() === 'admin';
+
+  /** ¿La sesión actual puede hacer esto? */
+  function puede(capacidad) {
+    return CAPACIDADES[rol()].includes(capacidad);
+  }
+
+  /* En modo local no hay token que firme nada: el correo es el que se escribió
+     en el formulario. El papel sirve para poder demostrar la pantalla sin
+     conexión, pero la interfaz lo dice en voz alta en lugar de aparentar que
+     es una credencial de verdad. */
+  const rolVerificado = () => state.modo === 'nube' && !!state.uid;
 
   /* ================================================================== */
   /* Estado de la sesión                                                 */
@@ -559,7 +630,13 @@ const DB = (() => {
     usuario,
     registros: generarHistorial(),
     notificaciones: generarNotificaciones(),
+    articulos,                    // UC3: lo puede reemplazar el administrador
     insigniasNuevas: [],          // se llena al desbloquear una insignia en UC4
+    /* Ids de registros de ejemplo que la persona borró. Sin esto, en modo
+       local se borraba una fila, la pantalla decía "listo, se borró", y al
+       recargar volvía a aparecer: el historial se regenera con la misma
+       semilla y solo se guardaban los registros añadidos a mano. */
+    borrados: [],
 
     /* 'local' = datos simulados en el navegador (sin conexión o sin Firebase).
        'nube'  = cuentas y datos reales en Firebase Auth + Cloud Firestore.
@@ -595,6 +672,10 @@ const DB = (() => {
       canton: '',
       meta: 45,
       desde: hoyISO(),
+      // Ajustes de privacidad del UC10. Se arranca participando, que es lo que
+      // la casilla del registro deja aceptado de forma explícita.
+      enComunidad: true,
+      mostrarProvincia: true,
       notificaciones: { recordatorio: true, logros: true, resumen: true, comunidad: false },
       frecuencia: 'diaria',
       hora: '19:00'
@@ -615,6 +696,8 @@ const DB = (() => {
     state.modo = 'nube';
     state.uid = uid;
     state.autenticado = true;
+    /* El correo del token manda sobre el guardado en el perfil: es el que
+       Firebase firmó y el único con el que se puede decidir un permiso. */
     state.usuario = datos.perfil
       ? { ...usuario, ...datos.perfil, correo: correo || datos.perfil.correo }
       : perfilNuevo({ uid, nombre: correo, correo, provincia: 'San José' });
@@ -622,6 +705,9 @@ const DB = (() => {
     state.notificaciones = datos.notificaciones || [];
     state.logrosGuardados = datos.logros || [];
     state.comunidadReal = comunidad || [];
+    state.borrados = [];
+    // El contenido publicado por el administrador; si no hay, el de fábrica.
+    state.articulos = (datos.articulos && datos.articulos.length) ? datos.articulos : articulos;
   }
 
   /** Sesión cerrada: se limpia todo rastro del usuario anterior. */
@@ -629,10 +715,13 @@ const DB = (() => {
     state.modo = 'nube';
     state.uid = null;
     state.autenticado = false;
+    state.usuario = { ...usuario, correo: '' };   // el correo decide el papel
     state.registros = [];
     state.notificaciones = [];
     state.logrosGuardados = [];
     state.comunidadReal = [];
+    state.borrados = [];
+    state.articulos = articulos;
   }
 
   /** Repliegue a los datos simulados cuando Firebase no está disponible. */
@@ -644,6 +733,8 @@ const DB = (() => {
     state.notificaciones = generarNotificaciones();
     state.logrosGuardados = [];
     state.comunidadReal = [];
+    state.borrados = [];
+    state.articulos = articulos;
     restaurar();
   }
 
@@ -656,6 +747,7 @@ const DB = (() => {
         autenticado: state.autenticado,
         usuario: state.usuario,
         registrosExtra: state.registros.filter(r => r.manual),
+        borrados: state.borrados,
         leidas: state.notificaciones.filter(n => n.leida).map(n => n.id)
       }));
     } catch (e) { /* modo archivo sin almacenamiento: el prototipo sigue */ }
@@ -670,6 +762,13 @@ const DB = (() => {
       state.autenticado = !!s.autenticado;
       if (s.usuario) Object.assign(state.usuario, s.usuario);
       if (Array.isArray(s.registrosExtra)) state.registros.push(...s.registrosExtra);
+      /* Los borrados se aplican después de sumar los añadidos a mano, porque
+         se puede haber borrado uno de ellos. */
+      if (Array.isArray(s.borrados) && s.borrados.length) {
+        state.borrados = s.borrados;
+        const fuera = new Set(s.borrados);
+        state.registros = state.registros.filter(r => !fuera.has(r.id));
+      }
       if (Array.isArray(s.leidas)) {
         state.notificaciones.forEach(n => { if (s.leidas.includes(n.id)) n.leida = true; });
       }
@@ -766,6 +865,56 @@ const DB = (() => {
     return n;
   }
 
+  /* --------------------------------------------------------------------
+     Semanas seguidas con al menos tres acciones (insignia "Bandera azul").
+
+     Esta función existe porque el valor anterior era
+     `Math.min(12, Math.floor(registros.length / 9))`, un atajo que no medía
+     lo que la insignia promete. El criterio que la app le MUESTRA a la
+     persona dice "doce semanas seguidas con al menos tres acciones"; con el
+     atajo, 108 registros hechos todos en una misma semana la desbloqueaban, y
+     doce semanas impecables de dos acciones cada una no. Decirle a alguien un
+     criterio y evaluarle otro es un error de fondo, no de redondeo.
+
+     Se cuenta hacia atrás desde la semana en curso, y la semana empieza el
+     lunes, como el calendario local.
+     ------------------------------------------------------------------ */
+  const MINIMO_SEMANAL = 3;
+
+  function lunesDe(fecha) {
+    const d = new Date(fecha);
+    d.setHours(0, 0, 0, 0);
+    // getDay(): 0 es domingo. Se convierte a "días transcurridos desde lunes".
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return iso(d);
+  }
+
+  function semanasSeguidas() {
+    const porSemana = new Map();
+    state.registros.forEach(r => {
+      const k = lunesDe(r.fecha + 'T00:00:00');
+      porSemana.set(k, (porSemana.get(k) || 0) + 1);
+    });
+
+    let n = 0;
+    const cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+    cursor.setDate(cursor.getDate() - ((cursor.getDay() + 6) % 7));
+
+    /* La semana en curso todavía no ha terminado: si aún no llega al mínimo no
+       rompe la cuenta, simplemente no suma. Lo contrario castigaría a alguien
+       por consultar la pantalla un lunes por la mañana. */
+    if ((porSemana.get(iso(cursor)) || 0) < MINIMO_SEMANAL) {
+      cursor.setDate(cursor.getDate() - 7);
+    }
+
+    while ((porSemana.get(iso(cursor)) || 0) >= MINIMO_SEMANAL) {
+      n++;
+      cursor.setDate(cursor.getDate() - 7);
+    }
+    return n;
+  }
+
   /** Métricas que alimentan el progreso de cada insignia. */
   function metricas() {
     const total = sumaCO2(state.registros);
@@ -775,7 +924,7 @@ const DB = (() => {
       racha: racha(),
       km: state.registros.filter(r => r.categoria === 'transporte').reduce((a, r) => a + r.cantidad, 0),
       reciclajes: state.registros.filter(r => r.categoria === 'reciclaje').length,
-      semanas: Math.min(12, Math.floor(state.registros.length / 9))
+      semanas: semanasSeguidas()
     };
   }
 
@@ -813,26 +962,57 @@ const DB = (() => {
   function tablaComunidad() {
     const miCo2 = +sumaCO2(state.registros).toFixed(1);
     const yo = {
-      alias: state.usuario.alias, zona: state.usuario.provincia,
+      alias: state.usuario.alias,
+      /* El interruptor de "mostrar mi provincia" del UC10 se respeta aquí. Si
+         no se respetara en la tabla, el ajuste sería decorativo. */
+      zona: state.usuario.mostrarProvincia === false ? '—' : state.usuario.provincia,
       co2: miCo2, acciones: state.registros.length, esYo: true
     };
 
+    /* Quien se salió de la comparativa no aparece en su propia tabla: ver el
+       ranking desde dentro mientras se le dice a los demás que uno no está
+       sería mostrar dos versiones distintas de lo mismo. */
+    const dentro = state.usuario.enComunidad !== false;
+
     let lista;
     if (state.modo === 'nube') {
+      /* Se conserva el `uid`: la moderación de la comparativa (panel de
+         administración) necesita saber qué fila retirar, y sigue sin haber
+         nada personal en la tabla — el uid no dice nombre ni correo. */
       const otros = state.comunidadReal
         .filter(c => c.uid !== state.uid)
-        .map(c => ({ alias: c.alias, zona: c.zona, co2: +(c.co2 || 0), acciones: c.acciones || 0 }));
+        .map(c => ({ uid: c.uid, alias: c.alias, zona: c.zona,
+                     co2: +(c.co2 || 0), acciones: c.acciones || 0 }));
       const relleno = otros.length >= 4
         ? []
         : comunidad.filter(c => !c.esYo).slice(0, 9 - otros.length).map(c => ({ ...c, simulado: true }));
-      lista = [yo, ...otros, ...relleno];
+      lista = dentro ? [yo, ...otros, ...relleno] : [...otros, ...relleno];
     } else {
-      lista = comunidad.map(c => c.esYo ? yo : { ...c, simulado: true });
+      lista = comunidad
+        .filter(c => !c.esYo || dentro)
+        .map(c => c.esYo ? yo : { ...c, simulado: true });
     }
 
     lista.sort((a, b) => b.co2 - a.co2);
     lista.forEach((c, i) => c.pos = i + 1);
     return lista;
+  }
+
+  /** ¿La persona está participando en la comparativa del UC8? */
+  const enComunidad = () => state.usuario.enComunidad !== false;
+
+  /** Vuelve a publicar la fila propia con los ajustes de privacidad al día. */
+  function republicarEnComunidad() {
+    if (!enComunidad()) return;
+    replicar(() => Nube.publicarEnComunidad(state.uid, {
+      alias: state.usuario.alias,
+      provincia: state.usuario.mostrarProvincia === false ? '—' : state.usuario.provincia
+    }), 'publicación en comunidad');
+  }
+
+  /** Retira la fila propia de la comparativa (UC10 → privacidad). */
+  function retirarmeDeComunidad() {
+    replicar(() => Nube.retirarDeComunidad(state.uid), 'salida de la comunidad');
   }
 
   /** Cuántos participantes de la tabla son simulados (aviso de la pantalla). */
@@ -844,10 +1024,29 @@ const DB = (() => {
   /* Mutaciones                                                          */
   /* ================================================================== */
 
+  /* --------------------------------------------------------------------
+     Identificador de registro.
+
+     Antes era `'RA-' + Date.now().toString().slice(-6)`. Los últimos seis
+     dígitos de la marca de tiempo en milisegundos se repiten cada 1000
+     segundos, así que dos acciones registradas con unos 16 minutos de
+     diferencia podían recibir el MISMO id. En Firestore el id es la clave del
+     documento: el segundo registro sobrescribía al primero, y borrar uno
+     borraba el otro. Con un contador y un sufijo aleatorio la colisión deja
+     de ser posible dentro de una sesión, y entre sesiones haría falta que
+     coincidieran el milisegundo y el azar.
+     ------------------------------------------------------------------ */
+  let secuencia = 0;
+  function nuevoId() {
+    secuencia++;
+    const azar = Math.random().toString(36).slice(2, 6);
+    return `RA-${Date.now().toString(36)}-${secuencia.toString(36)}${azar}`;
+  }
+
   function agregarRegistro({ categoria, tipo, cantidad, fecha, nota }) {
     const t = tipoDe(categoria, tipo);
     const reg = {
-      id: 'RA-' + Date.now().toString().slice(-6),
+      id: nuevoId(),
       fecha: fecha || hoyISO(),
       categoria, tipo,
       cantidad: +cantidad,
@@ -866,6 +1065,7 @@ const DB = (() => {
     const i = state.registros.findIndex(r => r.id === id);
     if (i < 0) return;
     state.registros.splice(i, 1);
+    if (!state.borrados.includes(id)) state.borrados.push(id);
     persistir();
     replicar(() => Nube.eliminarRegistro(state.uid, id), 'borrado de registro');
   }
@@ -894,6 +1094,101 @@ const DB = (() => {
   }
 
   function noLeidas() { return state.notificaciones.filter(n => !n.leida).length; }
+
+  /* ================================================================== */
+  /* CONTENIDO AMBIENTAL (clase InformacionAmbiental) — UC3              */
+  /*                                                                     */
+  /* Lo que el UC3 promete mostrar. Hasta ahora era una constante del     */
+  /* código, así que la frase del Avance 3 —"el contenido lo administra   */
+  /* el sistema"— no tenía a nadie detrás. Ahora lo publica el            */
+  /* administrador y lo leen todas las cuentas: es la razón de existir    */
+  /* del papel de administrador.                                         */
+  /* ================================================================== */
+
+  /** Guarda la lista completa de artículos. Solo con permiso. */
+  function guardarArticulos(lista) {
+    if (!puede('contenido.editar')) return false;
+    state.articulos = lista;
+    replicar(() => Nube.guardarArticulos(lista), 'contenido ambiental');
+    return true;
+  }
+
+  /** Devuelve el contenido a la lista de fábrica. */
+  function restablecerArticulos() {
+    return guardarArticulos(articulos.map(a => ({ ...a })));
+  }
+
+  /** Los artículos de fábrica, para poder comparar contra lo publicado. */
+  const articulosDeFabrica = () => articulos.map(a => ({ ...a }));
+
+  /** Retira una fila de la comparativa comunitaria. Solo con permiso. */
+  function moderarComunidad(uid) {
+    if (!puede('comunidad.moderar')) return false;
+    state.comunidadReal = state.comunidadReal.filter(c => c.uid !== uid);
+    replicar(() => Nube.retirarDeComunidad(uid), 'moderación de comunidad');
+    return true;
+  }
+
+  /* ================================================================== */
+  /* EXPORTACIÓN                                                         */
+  /*                                                                     */
+  /* Antes el botón de "exportar" solo avisaba de que el backend enviaría */
+  /* un archivo. No hacía falta ningún backend: los datos están en el     */
+  /* navegador y el navegador sabe escribir archivos. Un botón que        */
+  /* promete un archivo tiene que entregar un archivo.                   */
+  /* ================================================================== */
+
+  /** Todos los datos de la persona, en un objeto listo para serializar. */
+  function exportable() {
+    return {
+      generadoEl: new Date().toISOString(),
+      aplicacion: 'Sistema de Registro y Seguimiento de Acciones Climáticas (ODS 13)',
+      modo: state.modo,
+      perfil: {
+        id: state.usuario.id, nombre: state.usuario.nombre, correo: state.usuario.correo,
+        alias: state.usuario.alias, provincia: state.usuario.provincia,
+        canton: state.usuario.canton, meta: state.usuario.meta, desde: state.usuario.desde
+      },
+      totales: {
+        registros: state.registros.length,
+        co2Evitado: +sumaCO2(state.registros).toFixed(3),
+        racha: racha(),
+        insignias: logros().filter(l => l.obtenida).map(l => l.nombre)
+      },
+      /* Cada registro se exporta con el factor y la fórmula que se le
+         aplicaron. Un CSV con solo el resultado no se puede auditar: quien lo
+         reciba no podría comprobar de dónde salió el número. */
+      registros: registrosOrdenados().map(r => {
+        const t = tipoDe(r.categoria, r.tipo);
+        const f = fuenteDe(t);
+        return {
+          id: r.id, fecha: r.fecha,
+          categoria: CATEGORIAS[r.categoria]?.nombre || r.categoria,
+          tipo: t?.nombre || r.tipo,
+          cantidad: r.cantidad, unidad: r.unidad,
+          factor: t?.factor ?? null,
+          co2Evitado: r.co2,
+          fuenteDelFactor: f.sigla,
+          fuenteVerificada: f.verificada,
+          nota: r.nota || ''
+        };
+      })
+    };
+  }
+
+  /** Los registros como CSV (separador `;`, que es el que espera Excel en es-CR). */
+  function csv() {
+    const campos = ['id', 'fecha', 'categoria', 'tipo', 'cantidad', 'unidad',
+                    'factor', 'co2Evitado', 'fuenteDelFactor', 'fuenteVerificada', 'nota'];
+    const celda = v => {
+      const s = String(v ?? '');
+      return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const filas = exportable().registros.map(r => campos.map(c => celda(r[c])).join(';'));
+    /* La marca de orden de bytes es lo que hace que Excel abra el archivo como
+       UTF-8; sin ella, "Orgánico a compost" llega con la tilde partida. */
+    return '﻿' + [campos.join(';'), ...filas].join('\r\n');
+  }
 
   /* ================================================================== */
   /* Formato (es-CR: coma decimal, punto de millar)                      */
@@ -952,13 +1247,25 @@ const DB = (() => {
   return {
     CATEGORIAS, CAT_LIST, tipoDe, FUENTES, fuenteDe,
     state, persistir,
-    insignias, articulos, consejos, glosario,
+    insignias, consejos, glosario,
+    /* `articulos` se lee del estado y no de la constante: el administrador lo
+       puede haber reemplazado. Se expone como propiedad para que las pantallas
+       sigan escribiendo `DB.articulos` sin saber de dónde sale. */
+    get articulos() { return state.articulos; },
+    articulosDeFabrica,
     registrosOrdenados, enUltimosDias, sumaCO2,
     serieDiaria, serieSemanal, serieMensual, porCategoria,
-    racha, metricas, logros, tablaComunidad,
+    racha, metricas, logros, tablaComunidad, semanasSeguidas, MINIMO_SEMANAL,
+    enComunidad, republicarEnComunidad, retirarmeDeComunidad,
     agregarRegistro, eliminarRegistro, marcarLeidas, noLeidas,
     agregarNotificacion, guardarPerfil, anotarLogro, comunidadSimulada,
     perfilNuevo, datosDeEjemplo, iniciarNube, cerrarNube, usarLocal,
+    // Permisos
+    rol, esAdmin, puede, rolVerificado, ADMINISTRADORES, CAPACIDADES,
+    // Contenido y moderación (solo con permiso)
+    guardarArticulos, restablecerArticulos, moderarComunidad,
+    // Exportación
+    exportable, csv,
     fmt, equivalencia, hoyISO
   };
 })();

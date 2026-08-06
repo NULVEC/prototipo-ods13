@@ -15,9 +15,23 @@
    ========================================================================= */
 
 Screens.accion = {
+
+  /* Categoría y tipo con los que abrir el formulario ya rellenado. Lo pone la
+     paleta de comandos: escribir "autobús" y pulsar Enter deja el formulario
+     listo con el cursor en la cantidad, en dos gestos en lugar de cinco. Se
+     consume una sola vez, para que volver a la pantalla por el menú no arrastre
+     la elección anterior. */
+  preset: null,
+
   render() {
     const cats = DB.CAT_LIST;
     const hoy = DB.hoyISO();
+    const elegida = (this.preset && DB.CATEGORIAS[this.preset.categoria]?.id) || cats[0].id;
+    const catInicial = DB.CATEGORIAS[elegida];
+    /* La fecha más antigua que se puede registrar es la de creación de la
+       cuenta: no existían acciones antes de existir la cuenta, y sin un mínimo
+       el campo aceptaba 1990 sin decir nada. */
+    const desde = DB.state.usuario.desde || hoy;
 
     return `
       <div class="grid grid-form">
@@ -34,9 +48,9 @@ Screens.accion = {
             <fieldset style="border:0;padding:0;margin:0 0 var(--s-6)">
               <legend class="field-label" style="padding:0">¿De qué tipo?</legend>
               <div class="choice-grid" role="radiogroup" aria-label="Categoría de la acción">
-                ${cats.map((c, i) => `
+                ${cats.map(c => `
                   <label class="choice">
-                    <input type="radio" name="categoria" value="${c.id}" ${i === 0 ? 'checked' : ''}>
+                    <input type="radio" name="categoria" value="${c.id}" ${c.id === elegida ? 'checked' : ''}>
                     <span class="box">
                       ${Icon.get(c.icono, 22)}
                       <b>${c.nombre}</b>
@@ -44,7 +58,7 @@ Screens.accion = {
                     </span>
                   </label>`).join('')}
               </div>
-              <p class="hint" id="ayuda-cat" style="margin-top:var(--s-3)">${cats[0].ayuda}</p>
+              <p class="hint" id="ayuda-cat" style="margin-top:var(--s-3)">${catInicial.ayuda}</p>
             </fieldset>
 
             <div class="field">
@@ -60,13 +74,14 @@ Screens.accion = {
                   <input class="input" id="ac-cantidad" name="cantidad" type="number"
                          min="0.01" step="0.01" placeholder="0,00" inputmode="decimal"
                          data-reglas="requerido numero" required>
-                  <span class="addon" id="ac-unidad">kg</span>
+                  <span class="addon" id="ac-unidad">${catInicial.unidad}</span>
                 </div>
               </div>
 
               <div class="field">
                 <label for="ac-fecha">¿Cuándo?</label>
-                <input class="input" id="ac-fecha" name="fecha" type="date" value="${hoy}" max="${hoy}">
+                <input class="input" id="ac-fecha" name="fecha" type="date"
+                       value="${hoy}" min="${desde}" max="${hoy}">
                 <span class="hint">También podés registrar días pasados.</span>
               </div>
             </div>
@@ -147,6 +162,12 @@ Screens.accion = {
 
     const catActual = () => DB.CATEGORIAS[form.categoria.value];
 
+    /* El tipo del preset se aplica después de poblar el desplegable, más
+       abajo; aquí solo se recuerda cuál era y se descarta el preset, para que
+       volver a esta pantalla por el menú abra el formulario limpio. */
+    const tipoPedido = this.preset?.tipo || null;
+    this.preset = null;
+
     /* Devuelve el formulario a su estado neutro tras guardar o limpiar. */
     function limpiarEstados() {
       form.querySelectorAll('.field').forEach(f => {
@@ -197,6 +218,13 @@ Screens.accion = {
 
     poblarTipos();
 
+    if (tipoPedido && [...selTipo.options].some(o => o.value === tipoPedido)) {
+      selTipo.value = tipoPedido;
+      actualizar();
+      // Lo único que falta es la cantidad: ahí va el cursor.
+      cant.focus();
+    }
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
       if (!UI.validar(form)) {
@@ -222,6 +250,13 @@ Screens.accion = {
       form.reset();
       limpiarEstados();
       poblarTipos();
+
+      /* La acción nueva cambia la cinta de carbono y la meta del mes, que viven
+         en el armazón. Se actualizan esas dos piezas en lugar de redibujar la
+         pantalla: el formulario tiene que quedarse donde está para poder
+         registrar otra cosa enseguida. */
+      Router.refrescarCinta();
+      Router.refrescarMeta();
 
       if (nuevas.length) {
         /* Relación «extend»: UC7 solo ocurre si el registro alcanza la meta.
@@ -256,9 +291,9 @@ Screens.accion = {
         UI.toast('¡Listo!',
           `Esos ${DB.fmt.co2(reg.co2)} kg de CO₂ no se fueron al aire el ${DB.fmt.fechaCorta(reg.fecha)}.`);
         /* El foco vuelve a la cantidad solo si no se abrió la ventana de
-           insignia: si no, al perderlo se marcaría el campo vacío como error. */
+           insignia: si no, al perderlo se marcaría el campo vacío como error.
+           (`limpiarEstados()` ya corrió cinco líneas arriba; estaba repetido.) */
         cant.focus();
-        limpiarEstados();
       }
     });
   }

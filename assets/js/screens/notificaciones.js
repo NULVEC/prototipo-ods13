@@ -52,7 +52,7 @@ Screens.notificaciones = {
             <div class="panel-head">${Icon.get('ajustes', 18)}<h3>¿De qué te avisamos?</h3></div>
             <form class="panel-body" id="form-notif">
               <div class="field">
-                <span class="field-label">Qué quiere recibir</span>
+                <span class="field-label">Qué querés recibir</span>
                 ${[
                   ['recordatorio', 'Recordatorios de registro'],
                   ['logros', 'Insignias y logros'],
@@ -89,9 +89,9 @@ Screens.notificaciones = {
           <div class="panel panel-dark">
             <div class="panel-head">${Icon.get('recargar', 18)}<h3>Cómo llegan estos avisos</h3></div>
             <div class="panel-body">
-              <p class="text-sm" style="color:var(--pine-on-dark)">
-                En la arquitectura propuesta, el backend envía estos avisos de forma automática
-                mediante SMTP. Tocá el botón para simular una corrida del temporizador.
+              <p class="text-sm" style="color:var(--on-deep)">
+                En la arquitectura propuesta, el backend manda estos avisos solo, por correo.
+                Tocá el botón para simular una corrida del temporizador y ver qué llega.
               </p>
               <button class="btn btn-accent btn-block" type="button" id="n-disparar" style="margin-top:var(--s-4)">
                 ${Icon.get('campana', 16)}<span>Ejecutar ahora</span>
@@ -152,7 +152,9 @@ Screens.notificaciones = {
     document.getElementById('n-todas').addEventListener('click', () => {
       DB.marcarLeidas(null);
       UI.toast('Bandeja al día', 'Todas las notificaciones quedaron marcadas como leídas.', 'info');
-      Router.resolver();
+      refrescar();
+      this.refrescarCabecera();
+      Router.refrescarAvisos();
     });
 
     document.getElementById('n-disparar').addEventListener('click', async e => {
@@ -165,10 +167,12 @@ Screens.notificaciones = {
         titulo: pendiente ? 'Recordatorio: hoy no hay registros' : 'Corte del día generado',
         texto: pendiente
           ? `Tu racha de ${DB.racha()} días se mantiene si registrás algo antes de la medianoche.`
-          : `Hoy lleva ${DB.fmt.co2(DB.sumaCO2(DB.enUltimosDias(1)))} kg de CO₂ evitados. Buen cierre de jornada.`
+          : `Hoy llevás ${DB.fmt.co2(DB.sumaCO2(DB.enUltimosDias(1)))} kg de CO₂ evitados. Buen cierre de jornada.`
       });
       UI.toast('Temporizador ejecutado', 'Se generó un aviso nuevo en la bandeja.', 'info');
-      Router.resolver();
+      refrescar();
+      this.refrescarCabecera();
+      Router.refrescarAvisos();
     });
 
     const form = document.getElementById('form-notif');
@@ -239,9 +243,38 @@ Screens.notificaciones = {
   },
 
   conectar() {
+    /* Marcar UNA notificación como leída no justifica redibujar la pantalla.
+       Antes llamaba a `Router.resolver()`, así que al marcar la primera de la
+       lista se rehacía todo el panel y la posición de desplazamiento saltaba
+       arriba — con siete avisos, marcarlos de a uno era ir persiguiendo la
+       lista. Ahora se apaga esa fila y se refresca el contador del armazón. */
     UI.$$('[data-leer]').forEach(b => b.addEventListener('click', () => {
-      DB.marcarLeidas([b.dataset.leer]);
-      Router.resolver();
+      const id = b.dataset.leer;
+      DB.marcarLeidas([id]);
+
+      const fila = b.closest('li');
+      fila?.classList.remove('is-unread');
+      b.remove();
+
+      this.refrescarCabecera();
+      Router.refrescarAvisos();
     }));
+  },
+
+  /** Pone al día el rótulo y el botón de "marcar todas" sin rehacer la lista. */
+  refrescarCabecera() {
+    const sinLeer = DB.noLeidas();
+    const titulo = document.querySelector('#lista-notif')?.closest('.panel')?.querySelector('.panel-head h3');
+    if (titulo) titulo.textContent = sinLeer ? `${sinLeer} sin leer` : 'Todo al día';
+    const todas = document.getElementById('n-todas');
+    if (todas) todas.disabled = !sinLeer;
+    const chip = document.querySelector('#filtros-notif [data-f="sinleer"]');
+    if (chip) chip.textContent = `Sin leer (${sinLeer})`;
+    /* Si se está mirando el filtro "sin leer", la fila que se acaba de marcar
+       ya no pertenece a la lista: ahí sí hay que rehacerla. */
+    if (this.filtro === 'sinleer') {
+      document.getElementById('lista-notif').innerHTML = this.lista();
+      this.conectar();
+    }
   }
 };

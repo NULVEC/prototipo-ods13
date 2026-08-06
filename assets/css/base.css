@@ -6,6 +6,15 @@
 
 html { -webkit-text-size-adjust: 100%; }
 
+/* `hidden` tiene que esconder de verdad.
+   El navegador lo aplica desde su hoja propia, que pierde contra cualquier
+   regla de autor: `.notice { display: flex }` o `.nav-count { display: grid }`
+   ganaban, así que el contador de avisos se veía con cero pendientes y el
+   aviso de privacidad aparecía siempre. Con `!important` acotado a este
+   atributo, poner `.hidden = true` desde JavaScript vuelve a funcionar en
+   cualquier elemento. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   background: var(--paper);
@@ -36,14 +45,19 @@ p { margin: 0 0 var(--s-4); }
 p:last-child { margin-bottom: 0; }
 
 a {
-  color: var(--azul);
+  color: var(--link);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
-a:hover { color: var(--azul-700); }
+a:hover { color: var(--link-hover); }
 
 img, svg { display: block; max-width: 100%; }
 button, input, select, textarea { font: inherit; color: inherit; }
+
+/* Ningún elemento puede empujar el ancho del documento: es lo que produce la
+   barra de desplazamiento horizontal en móvil, y basta con una tabla o una
+   palabra larga para provocarla. */
+html, body { overflow-x: clip; }
 
 /* --- Foco: un solo tratamiento en toda la app, siempre visible ----------- */
 :focus { outline: none; }
@@ -52,6 +66,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
   outline-offset: 2px;
   border-radius: var(--r-xs);
 }
+/* Sobre las superficies profundas el azul institucional no se distingue del
+   fondo; ahí el anillo de foco usa la variante clara. */
+.sidebar :focus-visible,
+.panel-dark :focus-visible,
+.auth-aside :focus-visible,
+.calc :focus-visible,
+.escena-datos :focus-visible,
+.home-head :focus-visible { outline-color: var(--azul-bright); }
 
 /* --- Micro-etiquetas: la voz "instrumento" del sistema ------------------- */
 .label-micro {
@@ -81,10 +103,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .skip-link {
   position: absolute; left: var(--s-4); top: -60px; z-index: 200;
-  background: var(--pine-900); color: #fff; padding: var(--s-3) var(--s-5);
+  background: var(--deep); color: var(--on-deep-strong); padding: var(--s-3) var(--s-5);
   border-radius: var(--r-sm); transition: top var(--dur-2) var(--ease);
 }
-.skip-link:focus { top: var(--s-4); color: #fff; }
+.skip-link:focus { top: var(--s-4); color: var(--on-deep-strong); }
 
 .stack > * + * { margin-top: var(--s-4); }
 .muted { color: var(--ink-3); }
@@ -96,7 +118,7 @@ hr.rule {
   margin: var(--s-6) 0;
 }
 
-::selection { background: var(--pine-tint); color: var(--pine-700); }
+::selection { background: var(--pine-tint); color: var(--pine-ink); }
 
 /* Barra de desplazamiento discreta y acorde a la paleta */
 * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
@@ -105,3 +127,14 @@ hr.rule {
   background: var(--line-strong); border-radius: 6px;
   border: 3px solid transparent; background-clip: content-box;
 }
+
+/* --- Sin JavaScript ------------------------------------------------------ */
+.sin-js {
+  max-width: 46ch; margin: 18vh auto; padding: var(--s-8);
+  text-align: center;
+}
+.sin-js h1 { margin-bottom: var(--s-4); }
+.sin-js p { color: var(--ink-2); }
+/* La pantalla de carga se esconde desde un <style> dentro del propio
+   <noscript> del documento: el elemento existe siempre en el árbol, así que
+   un selector como `body:has(noscript)` la escondería también con JS activo. */

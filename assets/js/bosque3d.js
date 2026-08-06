@@ -14,7 +14,7 @@
    cuatrocientos árboles, para la tarjeta gráfica son dos objetos.
    ========================================================================= */
 
-import { THREE, crearVista, iluminar, rebote } from './vista3d.js';
+import { THREE, crearVista, iluminar, rebote, tokenColor } from './vista3d.js';
 
 /* Colores de copa por categoría. Salen de la misma paleta del sistema para
    que el bosque se lea como parte de la app y no como un adorno pegado. */
@@ -28,7 +28,9 @@ const COLOR_POR_DEFECTO = 0x3f8a63;
 
 const SUELO   = 0x14342a;
 const TRONCO  = 0x6b5137;
-const FONDO   = 0x0a2019;
+/* El fondo del lienzo lo decide el tema, no este archivo: tiene que ser el
+   mismo color que el panel que rodea la escena. Ver `tokenColor`. */
+const fondoDelTema = () => tokenColor('--deep', 0x0a2019);
 
 const ANGULO_AUREO = Math.PI * (3 - Math.sqrt(5));   // ≈ 137,5°
 
@@ -62,6 +64,8 @@ function montar(idContenedor, registros = []) {
      densidad se mantenga constante en lugar de apelotonarse. */
   const radio = Math.max(3.4, Math.sqrt(dibujados) * 0.92);
   const extension = radio * 2.5;
+
+  const FONDO = fondoDelTema();
 
   const v = crearVista(idContenedor, {
     fondo: FONDO,
@@ -187,10 +191,14 @@ function montar(idContenedor, registros = []) {
 
   colocar(animar ? 0 : finSiembra);
 
+  /* Devolver `true` significa "me queda animación": es lo que mantiene vivo el
+     bucle de dibujo. Cuando todos los árboles acabaron de brotar devuelve
+     falso y la vista se queda quieta hasta que alguien la gire. */
   v.alDibujar = dt => {
-    if (tiempo > finSiembra) return;     // ya crecieron todos: nada que recalcular
+    if (tiempo > finSiembra) return false;
     tiempo += dt;
     colocar(tiempo);
+    return true;
   };
   if (!animar) tiempo = finSiembra + 1;
 

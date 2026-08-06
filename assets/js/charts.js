@@ -9,42 +9,80 @@
 
 const Charts = (() => {
 
-  const PALETA = {
-    pine:  '#17493b',
-    azul:  '#1d4e9b',
-    ochre: '#b8862a',
-    verde: '#4e8f7c',
-    brasa: '#b8412a',
-    linea: '#ccd2c7',
-    tinta: '#12211c',
-    tinta3:'#66746c',
-    papel: '#f4f5f0'
+  /* --------------------------------------------------------------------
+     La paleta se LEE de las variables CSS en lugar de repetirse aquí.
+
+     Dos razones. La primera es que un color escrito dos veces se
+     desincroniza el día que alguien retoca `tokens.css` y se olvida de
+     este archivo. La segunda es el tema oscuro: con los valores fijos, la
+     rejilla y las etiquetas de los ejes quedaban en tono claro sobre
+     fondo oscuro y los gráficos se volvían ilegibles.
+
+     Se lee una vez y se guarda; `Charts.reset()` tira la caché cuando la
+     persona cambia de tema, y el enrutador vuelve a dibujar.
+     -------------------------------------------------------------------- */
+  let cache = null;
+
+  const leer = () => {
+    const cs = getComputedStyle(document.documentElement);
+    const v = (nombre, respaldo) => (cs.getPropertyValue(nombre).trim() || respaldo);
+    return {
+      pine:  v('--pine',        '#17493b'),
+      azul:  v('--azul',        '#1d4e9b'),
+      ochre: v('--ochre-fill',  '#b8862a'),
+      verde: v('--pine-mid',    '#4e8f7c'),
+      brasa: v('--ember',       '#b8412a'),
+      linea: v('--line',        '#ccd2c7'),
+      tinta: v('--ink',         '#12211c'),
+      tinta3:v('--ink-3',       '#58665e'),
+      papel: v('--paper-raised','#f4f5f0'),
+      fondoAviso: v('--deep',   '#0c2921'),
+      bordeAviso: v('--deep-line-firm', 'rgba(194,211,203,.25)'),
+      textoAviso: v('--on-deep-strong', '#f2f5f1'),
+      textoAviso2:v('--on-deep', '#c2d3cb')
+    };
   };
+
+  /* Se expone como objeto con getters para que `Charts.PALETA.azul` siga
+     funcionando en las pantallas que lo usan para pintar una leyenda, pero
+     devolviendo siempre el valor del tema activo. */
+  const PALETA = new Proxy({}, {
+    get: (_, k) => (cache || (cache = leer()))[k],
+    ownKeys: () => Object.keys(cache || (cache = leer())),
+    getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true })
+  });
 
   const registro = new Map();     // id de lienzo -> instancia, para destruir
 
-  /** Aplica los valores globales una sola vez. */
+  /** Aplica los valores globales. Se repite tras un cambio de tema. */
   function preparar() {
-    if (typeof Chart === 'undefined' || preparar.listo) return;
+    if (typeof Chart === 'undefined') return;
+    const P = cache || (cache = leer());
     Chart.defaults.font.family = "'IBM Plex Mono', monospace";
     Chart.defaults.font.size = 11;
-    Chart.defaults.color = PALETA.tinta3;
-    Chart.defaults.animation.duration = 620;
+    Chart.defaults.color = P.tinta3;
+    Chart.defaults.animation.duration = quieto() ? 0 : 620;
     Chart.defaults.animation.easing = 'easeOutCubic';
     Chart.defaults.plugins.legend.display = false;
     Chart.defaults.plugins.tooltip = {
       ...Chart.defaults.plugins.tooltip,
-      backgroundColor: '#0c2921',
+      backgroundColor: P.fondoAviso,
+      titleColor: P.textoAviso,
+      bodyColor: P.textoAviso2,
       titleFont: { family: "'IBM Plex Sans', sans-serif", size: 12, weight: '600' },
       bodyFont: { family: "'IBM Plex Mono', monospace", size: 12 },
       padding: 10,
       cornerRadius: 3,
       displayColors: false,
-      borderColor: 'rgba(194,211,203,.25)',
+      borderColor: P.bordeAviso,
       borderWidth: 1
     };
-    preparar.listo = true;
   }
+
+  const quieto = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /** Olvida la paleta cacheada. La llama el conmutador de tema. */
+  function reset() { cache = null; preparar(); }
 
   const ejes = (opts = {}) => ({
     x: {
@@ -111,34 +149,6 @@ const Charts = (() => {
               title: c => 'Semana ' + c[0].label,
               label: c => DB.fmt.co2(c.parsed.y) + ' kg CO₂ evitados'
             }
-          }
-        }
-      }
-    });
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* UC5 / UC9 — Reparto por categoría                                   */
-  /* ------------------------------------------------------------------ */
-  function reparto(id, cats) {
-    return montar(id, {
-      type: 'doughnut',
-      data: {
-        labels: cats.map(c => c.nombre),
-        datasets: [{
-          data: cats.map(c => c.co2),
-          backgroundColor: cats.map(c => c.color),
-          borderColor: PALETA.papel,
-          borderWidth: 2,
-          hoverOffset: 6
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        cutout: '62%',
-        plugins: {
-          tooltip: {
-            callbacks: { label: c => `${DB.fmt.co2(c.parsed)} kg CO₂` }
           }
         }
       }
@@ -215,36 +225,6 @@ const Charts = (() => {
   }
 
   /* ------------------------------------------------------------------ */
-  /* UC8 — Ranking horizontal anónimo                                    */
-  /* ------------------------------------------------------------------ */
-  function ranking(id, tabla, alias) {
-    return montar(id, {
-      type: 'bar',
-      data: {
-        labels: tabla.map(t => t.alias),
-        datasets: [{
-          data: tabla.map(t => t.co2),
-          backgroundColor: tabla.map(t => t.alias === alias ? PALETA.azul : PALETA.verde),
-          borderRadius: 2,
-          barPercentage: 0.72
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true, maintainAspectRatio: false,
-        scales: {
-          x: { beginAtZero: true, grid: { color: PALETA.linea }, border: { display: false },
-               ticks: { callback: v => v + ' kg' } },
-          y: { grid: { display: false }, border: { color: PALETA.linea } }
-        },
-        plugins: {
-          tooltip: { callbacks: { label: c => `${DB.fmt.co2(c.parsed.x)} kg CO₂ evitados` } }
-        }
-      }
-    });
-  }
-
-  /* ------------------------------------------------------------------ */
   /* UC9 — Reporte mensual apilado por categoría                         */
   /* ------------------------------------------------------------------ */
   function mensualApilado(id, serie) {
@@ -277,6 +257,6 @@ const Charts = (() => {
     });
   }
 
-  return { PALETA, montar, destruirTodo, evolucion, reparto, porDiaSemana,
-           contraComunidad, ranking, mensualApilado };
+  return { PALETA, montar, destruirTodo, reset, evolucion, porDiaSemana,
+           contraComunidad, mensualApilado };
 })();

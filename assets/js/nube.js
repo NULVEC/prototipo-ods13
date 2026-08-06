@@ -58,21 +58,21 @@ const db = getFirestore(app);
    Firebase devuelve códigos; la interfaz debe decir qué pasó y qué hacer.
    ========================================================================== */
 const MENSAJES = {
-  'auth/email-already-in-use':  'Ya existe una cuenta con ese correo. Inicie sesión o use otro.',
+  'auth/email-already-in-use':  'Ya hay una cuenta con ese correo. Entrá con ella o usá otra dirección.',
   'auth/invalid-email':         'El correo no tiene un formato válido.',
-  'auth/weak-password':         'La contraseña es demasiado débil. Use al menos ocho caracteres.',
+  'auth/weak-password':         'Esa contraseña es muy débil. Poné al menos ocho caracteres.',
   'auth/invalid-credential':    'El correo o la contraseña no coinciden con ninguna cuenta.',
   'auth/wrong-password':        'La contraseña no es correcta.',
   'auth/user-not-found':        'No hay ninguna cuenta registrada con ese correo.',
-  'auth/user-disabled':         'Esta cuenta está deshabilitada. Escribile al administrador del sistema.',
-  'auth/too-many-requests':     'Demasiados intentos seguidos. Espere unos minutos antes de reintentar.',
+  'auth/user-disabled':         'Esta cuenta está deshabilitada. Escribile a quien administra el sistema.',
+  'auth/too-many-requests':     'Demasiados intentos seguidos. Esperá unos minutos y probá otra vez.',
   'auth/network-request-failed':'No hay conexión con el servidor. Revisá tu red y probá de nuevo.',
-  'auth/requires-recent-login': 'Por seguridad, vuelva a iniciar sesión antes de hacer este cambio.',
+  'auth/requires-recent-login': 'Por seguridad, volvé a iniciar sesión antes de hacer este cambio.',
   'auth/operation-not-allowed': 'El acceso por correo y contraseña no está habilitado en el proyecto de Firebase.',
   'auth/configuration-not-found':
     'Falta activar Authentication en el proyecto de Firebase y habilitar el proveedor de correo y contraseña.',
   'auth/unauthorized-domain':
-    'Este dominio no está autorizado en Firebase Authentication. Agréguelo en Authentication → Settings → Authorized domains.',
+    'Este dominio no está autorizado en Firebase Authentication. Hay que agregarlo en Authentication → Settings → Authorized domains.',
   'auth/api-key-not-valid': 'La clave de API del proyecto no sirve. Hay que revisar la configuración en nube.js.',
   'permission-denied':          'Las reglas de seguridad no permiten esta operación.',
   'unavailable':                'No hay conexión con la base de datos. Tus cambios se guardan apenas vuelva.',
@@ -94,18 +94,57 @@ async function cargarTodo(uid) {
   const perfilSnap = await getDoc(doc(db, 'usuarios', uid));
   const perfil = perfilSnap.exists() ? perfilSnap.data() : null;
 
-  const [regsSnap, notisSnap, logrosSnap] = await Promise.all([
+  const [regsSnap, notisSnap, logrosSnap, articulos] = await Promise.all([
     getDocs(query(collection(db, 'usuarios', uid, 'registros'), orderBy('fecha', 'desc'), limit(1000))),
     getDocs(query(collection(db, 'usuarios', uid, 'notificaciones'), orderBy('fecha', 'desc'), limit(100))),
-    getDocs(collection(db, 'usuarios', uid, 'logros'))
+    getDocs(collection(db, 'usuarios', uid, 'logros')),
+    cargarArticulos()
   ]);
 
   return {
     perfil,
     registros: regsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
     notificaciones: notisSnap.docs.map(d => ({ id: d.id, ...d.data() })),
-    logros: logrosSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+    logros: logrosSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+    articulos
   };
+}
+
+/* --------------------------------------------------------------------------
+   Contenido ambiental del UC3 (clase InformacionAmbiental).
+
+   Un solo documento con la lista completa, no una colección con un documento
+   por artículo. La pantalla siempre los necesita todos y en orden; con un
+   documento es una lectura y el orden es el del arreglo, mientras que con una
+   colección serían N lecturas más un campo de posición que hay que mantener a
+   mano cada vez que se reordena.
+
+   Lo lee cualquier cuenta autenticada y lo escribe solo un administrador. Eso
+   no lo decide este archivo: lo decide `firestore.rules`.
+   ----------------------------------------------------------------------- */
+async function cargarArticulos() {
+  try {
+    const snap = await getDoc(doc(db, 'contenido', 'ambiental'));
+    const lista = snap.exists() ? snap.data().articulos : null;
+    return Array.isArray(lista) ? lista : null;
+  } catch (e) {
+    // Si no se puede leer, la pantalla usa el contenido de fábrica.
+    console.warn('No se pudo leer el contenido ambiental:', traducir(e));
+    return null;
+  }
+}
+
+async function guardarArticulos(lista) {
+  await setDoc(doc(db, 'contenido', 'ambiental'), {
+    articulos: lista,
+    actualizado: serverTimestamp(),
+    actualizadoPor: auth.currentUser?.email || null
+  });
+}
+
+/** Retira una fila de la comparativa comunitaria (moderación). */
+async function retirarDeComunidad(uid) {
+  await deleteDoc(doc(db, 'comunidad', uid));
 }
 
 /** Participantes de la comparativa comunitaria (UC8), sin datos personales. */
@@ -128,15 +167,25 @@ async function guardarPerfil(uid, perfil) {
   await publicarEnComunidad(uid, perfil);
 }
 
-/** Publica solo lo que la comparativa necesita: alias, provincia y totales. */
+/**
+ * Publica solo lo que la comparativa necesita: alias, provincia y totales.
+ *
+ * Respeta los dos ajustes de privacidad del UC10, y los respeta AQUÍ porque
+ * este es el único sitio por donde salen datos a la colección compartida. Si
+ * el filtro viviera en la pantalla, cualquier camino que no pasara por ella
+ * —guardar el perfil, registrar una acción— volvería a publicar la fila de
+ * alguien que había pedido salirse.
+ */
 async function publicarEnComunidad(uid, perfil, totales) {
+  if (DB.state.usuario.enComunidad === false) return;
+
   const t = totales || {
     co2: +DB.sumaCO2(DB.state.registros).toFixed(1),
     acciones: DB.state.registros.length
   };
   await setDoc(doc(db, 'comunidad', uid), {
     alias: perfil.alias,
-    zona: perfil.provincia,
+    zona: DB.state.usuario.mostrarProvincia === false ? '—' : (perfil.provincia || '—'),
     co2: t.co2,
     acciones: t.acciones,
     actualizado: serverTimestamp()
@@ -280,11 +329,13 @@ window.Nube = {
   entrar: (correo, clave) => signInWithEmailAndPassword(auth, correo, clave),
   salir: () => signOut(auth),
   recuperarClave: correo => sendPasswordResetEmail(auth, correo),
-  cargarTodo, cargarComunidad,
+  cargarTodo, cargarComunidad, cargarArticulos,
   guardarPerfil, publicarEnComunidad,
   agregarRegistro, eliminarRegistro,
   marcarNotificaciones, crearNotificacion, registrarLogro,
-  cambiarClave, cambiarCorreo, borrarCuenta
+  cambiarClave, cambiarCorreo, borrarCuenta,
+  // Solo funcionan para un administrador: las reglas rechazan al resto.
+  guardarArticulos, retirarDeComunidad
 };
 
 /* ==========================================================================

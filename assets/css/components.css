@@ -27,20 +27,28 @@
 }
 .btn svg { flex: none; }
 .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
-.btn:active { transform: translateY(0); box-shadow: none; }
+/* Al pulsar baja del todo, un pelo por debajo del reposo: es el gesto que hace
+   que un botón se sienta físico en lugar de solo cambiar de color. */
+.btn:active { transform: translateY(1px) scale(.985); box-shadow: none; }
 .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+/* En una pantalla táctil no hay hover, y el desplazamiento de 1px al tocar se
+   lee como un salto. Los dispositivos sin puntero fino se quedan quietos. */
+@media (hover: none) {
+  .btn:hover { transform: none; box-shadow: none; }
+  .btn:active { transform: scale(.97); }
+}
 
-.btn-primary { --btn-bg: var(--pine); --btn-fg: #f2f5f1; --btn-bd: var(--pine-700); }
+.btn-primary { --btn-bg: var(--pine); --btn-fg: var(--on-deep-strong); --btn-bd: var(--pine-700); }
 .btn-primary:hover { --btn-bg: var(--pine-700); }
 
-.btn-accent  { --btn-bg: var(--azul); --btn-fg: #fff; --btn-bd: var(--azul-700); }
+.btn-accent  { --btn-bg: var(--azul); --btn-fg: var(--azul-on); --btn-bd: var(--azul-700); }
 .btn-accent:hover { --btn-bg: var(--azul-700); }
 
 .btn-ghost   { --btn-bg: transparent; --btn-bd: transparent; --btn-fg: var(--ink-2); }
 .btn-ghost:hover { --btn-bg: var(--paper-sunken); --btn-fg: var(--ink); box-shadow: none; }
 
 .btn-danger  { --btn-bg: transparent; --btn-fg: var(--ember-700); --btn-bd: var(--ember); }
-.btn-danger:hover { --btn-bg: var(--ember); --btn-fg: #fff; }
+.btn-danger:hover { --btn-bg: var(--ember); --btn-fg: var(--ember-on); }
 
 .btn-sm { min-height: 30px; padding: 6px var(--s-3); font-size: var(--t-sm); }
 .btn-block { width: 100%; }
@@ -97,9 +105,9 @@
   background: var(--paper-sunken); border-radius: 0 0 var(--r-md) var(--r-md);
   font-size: var(--t-sm); color: var(--ink-2);
 }
-.panel-dark { background: var(--pine-900); border-color: var(--pine-700); color: var(--pine-on-dark); }
-.panel-dark h3, .panel-dark h2 { color: #f2f5f1; }
-.panel-dark .panel-head { border-bottom-color: rgba(194, 211, 203, .16); }
+.panel-dark { background: var(--deep); border-color: var(--pine-700); color: var(--on-deep); }
+.panel-dark h3, .panel-dark h2 { color: var(--on-deep-strong); }
+.panel-dark .panel-head { border-bottom-color: var(--deep-line); }
 
 /* ==========================================================================
    LECTURAS (los "KPI" del instrumento)
@@ -126,6 +134,30 @@
 .readout.is-accent { --accent: var(--azul); }
 .readout.is-ember  { --accent: var(--ember); }
 .readout.is-ochre  { --accent: var(--ochre-fill); }
+
+/* La regla superior de color se traza al entrar, de izquierda a derecha, como
+   la aguja de un instrumento que acaba de medir. Cuatro lecturas trazándose en
+   cascada es la microinteracción que más aporta de la aplicación, y cuesta una
+   sola animación de `transform` — no toca el layout.
+
+   El borde de reposo se queda en gris y el color lo pinta el pseudoelemento
+   encima: así el grosor de 3 px reserva su sitio desde el principio y nada se
+   mueve cuando la animación arranca. Con `prefers-reduced-motion` la duración
+   baja a cero y la barra aparece ya completa. */
+.readout { position: relative; border-top-color: var(--line); }
+.readout::before {
+  content: "";
+  position: absolute; top: -3px; left: -1px; right: -1px; height: 3px;
+  background: var(--accent, var(--pine));
+  transform-origin: left;
+  animation: readout-trazo 620ms var(--ease) both;
+  animation-delay: var(--retraso, 0ms);
+}
+@keyframes readout-trazo { from { transform: scaleX(0); } }
+/* El retraso sale de la posición dentro de la rejilla, sin JavaScript. */
+.grid > .readout:nth-child(2) { --retraso: 70ms; }
+.grid > .readout:nth-child(3) { --retraso: 140ms; }
+.grid > .readout:nth-child(4) { --retraso: 210ms; }
 
 .delta { display: inline-flex; align-items: center; gap: 3px; font-family: var(--font-mono);
   font-size: var(--t-sm); font-weight: 500; }
@@ -161,18 +193,23 @@
   transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease),
               background var(--dur-1) var(--ease);
 }
-.input::placeholder, .textarea::placeholder { color: #9aa69f; }
+.input::placeholder, .textarea::placeholder { color: var(--ink-3); opacity: .75; }
 .input:hover, .select:hover, .textarea:hover { border-color: var(--ink-3); }
 .input:focus, .select:focus, .textarea:focus {
   outline: none; border-color: var(--azul);
   box-shadow: 0 0 0 3px var(--azul-tint);
-  background: #fff;
+  background: var(--paper-pure);
 }
 .textarea { min-height: 96px; resize: vertical; line-height: 1.55; }
 
+/* La flecha y la marca de correcto son imágenes de fondo, y una imagen de
+   fondo no hereda `currentColor`. Para que sigan al tema, el SVG entero vive
+   en un token (`--svg-chevron`, `--svg-check`) que se redefine en oscuro; si
+   se quedara aquí con el trazo escrito a mano, desaparecería sobre el fondo
+   oscuro de los campos. */
 .select {
   appearance: none; padding-right: var(--s-8); cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2366746c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: var(--svg-chevron);
   background-repeat: no-repeat; background-position: right 12px center;
 }
 
@@ -228,7 +265,7 @@
    botón de revelar), donde se superpondría. */
 .field.is-valid > .input,
 .field.is-valid > .input-icon:not(:has(.reveal)) > .input {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2317493b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-image: var(--svg-check);
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 38px;
@@ -265,7 +302,7 @@
 }
 .switch .track::after {
   content: ""; position: absolute; top: 3px; left: 3px;
-  width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  width: 16px; height: 16px; border-radius: 50%; background: var(--paper-pure);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .28);
   transition: transform var(--dur-2) var(--ease);
 }
@@ -291,7 +328,7 @@
 .choice .box svg { color: var(--ink-2); margin-bottom: var(--s-3); }
 .choice .box b { display: block; font-size: var(--t-body); font-weight: 600; }
 .choice .box small { display: block; font-size: var(--t-sm); color: var(--ink-3); line-height: 1.4; margin-top: 2px; }
-.choice .box:hover { border-color: var(--ink-3); background: #fff; }
+.choice .box:hover { border-color: var(--ink-3); background: var(--paper-raised); }
 .choice input:checked + .box {
   border-color: var(--pine); background: var(--pine-tint);
   box-shadow: inset 0 0 0 1px var(--pine);
@@ -311,10 +348,10 @@
   background: var(--paper-sunken); color: var(--ink-2);
   border: 1px solid var(--line);
 }
-.tag-pine  { background: var(--pine-tint);  color: var(--pine-700);  border-color: #b6ccc0; }
-.tag-azul  { background: var(--azul-tint);  color: var(--azul-700);  border-color: #b9cdea; }
-.tag-ochre { background: var(--ochre-tint); color: var(--ochre-text); border-color: #ddcda2; }
-.tag-ember { background: var(--ember-tint); color: var(--ember-700); border-color: #e6bcb1; }
+.tag-pine  { background: var(--pine-tint);  color: var(--pine-700);  border-color: var(--pine-tint-line); }
+.tag-azul  { background: var(--azul-tint);  color: var(--azul-700);  border-color: var(--azul-tint-line); }
+.tag-ochre { background: var(--ochre-tint); color: var(--ochre-ink); border-color: var(--ochre-tint-line); }
+.tag-ember { background: var(--ember-tint); color: var(--ember-700); border-color: var(--ember-tint-line); }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -324,13 +361,13 @@
   transition: all var(--dur-1) var(--ease);
 }
 .chip:hover { border-color: var(--ink-3); color: var(--ink); }
-.chip[aria-pressed="true"] { background: var(--pine); border-color: var(--pine-700); color: #f2f5f1; }
+.chip[aria-pressed="true"] { background: var(--pine); border-color: var(--pine-700); color: var(--on-deep-strong); }
 .chip:focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
 .avatar {
   width: 32px; height: 32px; border-radius: var(--r-sm);
   display: grid; place-items: center;
-  background: var(--pine-mid); color: #0c2921;
+  background: var(--pine-mid); color: var(--deep);
   font-family: var(--font-mono); font-size: 12px; font-weight: 600;
   letter-spacing: .02em;
 }
@@ -378,7 +415,7 @@ table.data tbody tr:last-child td { border-bottom: 0; }
 table.data tbody tr { transition: background var(--dur-1) var(--ease); }
 table.data tbody tr:hover { background: var(--pine-tint); }
 table.data tbody tr.is-me { background: var(--azul-tint); }
-table.data tbody tr.is-me:hover { background: #cfddf1; }
+table.data tbody tr.is-me:hover { background: var(--azul-tint-2); }
 table.data .align-r { text-align: right; }
 
 /* ==========================================================================
@@ -396,16 +433,16 @@ table.data .align-r { text-align: right; }
 .feed .feed-icon {
   flex: none; width: 34px; height: 34px; display: grid; place-items: center;
   border-radius: var(--r-sm); background: var(--pine-tint); color: var(--pine);
-  border: 1px solid #b6ccc0;
+  border: 1px solid var(--pine-tint-line);
 }
-.feed .feed-icon.is-azul  { background: var(--azul-tint);  color: var(--azul);      border-color: #b9cdea; }
-.feed .feed-icon.is-ochre { background: var(--ochre-tint); color: var(--ochre-text); border-color: #ddcda2; }
-.feed .feed-icon.is-ember { background: var(--ember-tint); color: var(--ember-700); border-color: #e6bcb1; }
+.feed .feed-icon.is-azul  { background: var(--azul-tint);  color: var(--azul);      border-color: var(--azul-tint-line); }
+.feed .feed-icon.is-ochre { background: var(--ochre-tint); color: var(--ochre-ink); border-color: var(--ochre-tint-line); }
+.feed .feed-icon.is-ember { background: var(--ember-tint); color: var(--ember-700); border-color: var(--ember-tint-line); }
 .feed .feed-body { flex: 1; min-width: 0; }
 .feed .feed-body b { display: block; font-size: var(--t-body); font-weight: 600; }
 .feed .feed-body p { margin: 2px 0 0; font-size: var(--t-sm); color: var(--ink-2); }
 .feed .feed-meta { flex: none; text-align: right; font-family: var(--font-mono); font-size: var(--t-sm); color: var(--ink-3); }
-.feed > li.is-unread { background: #fdfdf9; }
+.feed > li.is-unread { background: color-mix(in srgb, var(--azul-tint) 34%, var(--paper-raised)); }
 .feed > li.is-unread .feed-body b::after {
   content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
   background: var(--azul); margin-left: 7px; vertical-align: middle;
@@ -433,10 +470,10 @@ table.data .align-r { text-align: right; }
   width: 74px; height: 84px; margin: 0 auto var(--s-4);
   display: grid; place-items: center;
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  background: var(--pine); color: #eef4f0;
+  background: var(--pine); color: var(--pine-on);
 }
-.seal.is-ochre { background: var(--ochre-fill); color: #2c1f04; }
-.seal.is-azul  { background: var(--azul); color: #fff; }
+.seal.is-ochre { background: var(--ochre-fill); color: var(--ochre-on); }
+.seal.is-azul  { background: var(--azul); color: var(--azul-on); }
 .badge-card h3 { font-size: var(--t-body); margin-bottom: 4px; }
 .badge-card p { font-size: var(--t-sm); color: var(--ink-3); margin: 0; line-height: 1.45; }
 .badge-card .earned { display: inline-flex; margin-top: var(--s-4); }
@@ -456,10 +493,10 @@ table.data .align-r { text-align: right; }
 }
 .notice svg { flex: none; margin-top: 1px; }
 .notice b { color: var(--ink); }
-.notice-info  { background: var(--azul-tint);  border-color: #b9cdea; color: var(--azul-700); }
-.notice-ok    { background: var(--pine-tint);  border-color: #b6ccc0; color: var(--pine-700); }
-.notice-warn  { background: var(--ochre-tint); border-color: #ddcda2; color: var(--ochre-text); }
-.notice-error { background: var(--ember-tint); border-color: #e6bcb1; color: var(--ember-700); }
+.notice-info  { background: var(--azul-tint);  border-color: var(--azul-tint-line); color: var(--azul-700); }
+.notice-ok    { background: var(--pine-tint);  border-color: var(--pine-tint-line); color: var(--pine-700); }
+.notice-warn  { background: var(--ochre-tint); border-color: var(--ochre-tint-line); color: var(--ochre-ink); }
+.notice-error { background: var(--ember-tint); border-color: var(--ember-tint-line); color: var(--ember-700); }
 .notice-info b, .notice-ok b, .notice-warn b, .notice-error b { color: inherit; }
 
 /* ==========================================================================
@@ -473,26 +510,42 @@ table.data .align-r { text-align: right; }
 }
 .toast {
   display: flex; align-items: flex-start; gap: var(--s-3);
-  padding: var(--s-3) var(--s-4);
-  background: var(--pine-900); color: #eef2ee;
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  background: var(--deep); color: var(--on-deep-strong);
   border-radius: var(--r-sm); box-shadow: var(--shadow-pop);
   border-left: 3px solid var(--pine-mid);
-  animation: toast-in var(--dur-3) var(--ease);
+  animation: toast-in var(--dur-3) var(--ease-out-back);
   font-size: var(--t-sm);
 }
-.toast.is-ok    { border-left-color: #6fbf9c; }
-.toast.is-error { border-left-color: #e2705a; }
+.toast.is-ok    { border-left-color: var(--pine-mid); }
+.toast.is-error { border-left-color: var(--ember-bright); }
 .toast.is-info  { border-left-color: var(--azul-bright); }
-.toast svg { flex: none; margin-top: 2px; }
+.toast > svg { flex: none; margin-top: 2px; }
+.toast-txt { flex: 1; min-width: 0; }
 .toast b { display: block; font-weight: 600; font-size: var(--t-body); }
-.toast p { margin: 2px 0 0; color: var(--pine-on-dark); }
+.toast p { margin: 2px 0 0; color: var(--on-deep); }
 .toast.is-out { animation: toast-out var(--dur-2) var(--ease) forwards; }
+
+/* Cerrar a mano. Un aviso de nueve segundos sin forma de quitarlo tapa la
+   esquina de la pantalla justo cuando la persona quiere seguir trabajando. */
+.toast-x {
+  flex: none; width: 26px; height: 26px; margin: -2px 0 0;
+  display: grid; place-items: center;
+  background: none; border: 0; border-radius: var(--r-xs);
+  color: var(--on-deep-soft); cursor: pointer;
+  transition: color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.toast-x:hover { color: var(--on-deep-strong); background: var(--deep-hover); }
+.toast-x:focus-visible { outline: 2px solid var(--azul-bright); outline-offset: 1px; }
 
 @keyframes toast-in  { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 @keyframes toast-out { to   { opacity: 0; transform: translateX(16px); } }
 
 @media (max-width: 560px) {
-  .toast-stack { right: var(--s-3); left: var(--s-3); bottom: var(--s-3); max-width: none; }
+  .toast-stack {
+    right: var(--s-3); left: var(--s-3); max-width: none;
+    bottom: calc(var(--s-3) + var(--safe-b));
+  }
 }
 
 /* ==========================================================================
@@ -500,7 +553,9 @@ table.data .align-r { text-align: right; }
    ========================================================================== */
 
 .skeleton {
-  background: linear-gradient(90deg, var(--paper-sunken) 25%, #e7eae1 37%, var(--paper-sunken) 63%);
+  background: linear-gradient(90deg, var(--paper-sunken) 25%,
+              color-mix(in srgb, var(--paper-sunken) 55%, var(--paper-raised)) 37%,
+              var(--paper-sunken) 63%);
   background-size: 400% 100%;
   animation: shimmer 1.3s ease-in-out infinite;
   border-radius: var(--r-xs);
@@ -538,7 +593,7 @@ table.data .align-r { text-align: right; }
 
 .modal-scrim {
   position: fixed; inset: 0; z-index: 130;
-  background: rgba(12, 41, 33, .55);
+  background: var(--scrim);
   display: grid; place-items: center; padding: var(--s-4);
   animation: fade-in var(--dur-2) var(--ease);
 }
@@ -573,3 +628,214 @@ table.data .align-r { text-align: right; }
 
 .view-enter { animation: view-in var(--dur-3) var(--ease); }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* Donde el navegador sabe hacer transiciones de vista, se le deja a él: captura
+   el antes y el después y los cruza, así que el cambio de pantalla no
+   parpadea. Es corto a propósito — una navegación no es una animación. */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: vt-salir 140ms var(--ease) both; }
+::view-transition-new(root) { animation: vt-entrar 200ms var(--ease) both; }
+@keyframes vt-salir  { to   { opacity: 0; } }
+@keyframes vt-entrar { from { opacity: 0; } }
+
+/* ==========================================================================
+   TECLAS
+   Los atajos se escriben como se ven en el teclado. Que la interfaz enseñe
+   sus propios atajos es lo que hace que alguien los llegue a usar.
+   ========================================================================== */
+
+.tecla {
+  display: inline-flex; align-items: center; gap: 2px;
+  min-width: 18px; padding: 1px 5px;
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  line-height: 1.5; color: var(--ink-3);
+  background: var(--paper-sunken);
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--r-xs);
+  white-space: nowrap;
+}
+.tecla svg { width: 11px; height: 11px; }
+
+/* El botón de la paleta se lee como un campo de búsqueda, porque es lo que
+   abre. Es la única pieza de la barra superior que rompe la forma de botón. */
+.abrir-paleta {
+  gap: var(--s-2);
+  color: var(--ink-3);
+  border-color: var(--line);
+  background: var(--paper-sunken);
+  font-weight: 500;
+  min-width: 0;
+}
+.abrir-paleta:hover { color: var(--ink); border-color: var(--line-strong); }
+.abrir-paleta .tecla { background: var(--paper-raised); }
+
+/* ==========================================================================
+   PALETA DE COMANDOS  (Ctrl/⌘ + K)
+   Ver `paleta.js`. Se abre por encima de todo, centrada arriba y no al medio:
+   la lista crece hacia abajo y así no baila al filtrar.
+   ========================================================================== */
+
+.paleta-scrim {
+  position: fixed; inset: 0; z-index: 150;
+  background: var(--scrim);
+  display: grid; align-items: start; justify-items: center;
+  padding: max(9vh, var(--s-8)) var(--s-4) var(--s-4);
+  animation: fade-in var(--dur-2) var(--ease);
+  backdrop-filter: blur(2px);
+}
+
+.paleta {
+  width: min(560px, 100%);
+  background: var(--paper-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+  animation: paleta-in var(--dur-3) var(--ease-out-back);
+}
+@keyframes paleta-in { from { opacity: 0; transform: translateY(-10px) scale(.98); } }
+
+.paleta-campo {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4) var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+.paleta-campo > svg { flex: none; color: var(--ink-3); }
+.paleta-campo input {
+  flex: 1; min-width: 0;
+  background: none; border: 0; outline: none;
+  font-size: 1.0625rem; color: var(--ink);
+}
+.paleta-campo input::placeholder { color: var(--ink-3); }
+
+.paleta-lista {
+  list-style: none; margin: 0; padding: var(--s-2);
+  max-height: min(48vh, 420px); overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.paleta-grupo {
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3);
+  padding: var(--s-3) var(--s-3) var(--s-1);
+}
+.paleta-grupo:first-child { padding-top: var(--s-1); }
+
+.paleta-op {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm); cursor: pointer;
+  /* Ni sombra ni movimiento al marcar: la lista se recorre con las flechas y
+     cualquier desplazamiento la haría vibrar entera. Solo cambia el fondo. */
+  transition: background var(--dur-1) var(--ease);
+}
+.paleta-op.is-marcada { background: var(--azul-tint); }
+.paleta-ico {
+  flex: none; display: grid; place-items: center;
+  width: 28px; height: 28px; border-radius: var(--r-sm);
+  background: var(--paper-sunken); color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+.paleta-op.is-marcada .paleta-ico {
+  background: var(--azul); color: var(--azul-on); border-color: var(--azul-700);
+}
+.paleta-txt { flex: 1; min-width: 0; }
+.paleta-txt b { display: block; font-size: var(--t-body); font-weight: 600; }
+.paleta-txt small {
+  display: block; font-size: var(--t-sm); color: var(--ink-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.paleta-op.is-marcada .paleta-txt small { color: var(--azul-ink); }
+.paleta-enter { flex: none; color: var(--azul-ink); display: grid; place-items: center; }
+
+.paleta-vacio { text-align: center; padding: var(--s-8) var(--s-5); }
+.paleta-vacio svg { margin: 0 auto var(--s-3); color: var(--line-strong); }
+.paleta-vacio p { margin: 0; font-size: var(--t-sm); color: var(--ink-3); }
+
+.paleta-pie {
+  display: flex; gap: var(--s-4); align-items: center;
+  padding: var(--s-2) var(--s-4);
+  border-top: 1px solid var(--line); background: var(--paper-sunken);
+  font-size: var(--t-micro); color: var(--ink-3);
+}
+.paleta-pie span { display: inline-flex; align-items: center; gap: 5px; }
+.paleta-pie-fin { margin-left: auto; }
+
+@media (max-width: 560px) {
+  .paleta-scrim { padding: var(--s-3); align-items: end; }
+  .paleta { animation: paleta-in-movil var(--dur-3) var(--ease); }
+  @keyframes paleta-in-movil { from { opacity: 0; transform: translateY(16px); } }
+  .paleta-pie { display: none; }   /* no hay teclado que enseñar */
+  .paleta-lista { max-height: 54vh; }
+}
+
+/* Con un diálogo o la paleta abiertos, el fondo no se desplaza: si no, la
+   rueda del ratón mueve la página de detrás y se pierde el sitio. */
+body.con-modal { overflow: hidden; }
+
+/* ==========================================================================
+   TABLAS EN PANTALLA ANGOSTA
+
+   Una tabla de seis columnas dentro de un contenedor con desplazamiento
+   horizontal es legible en teoría y molesta en la práctica: hay que arrastrar
+   para leer cada fila y se pierde de vista a qué columna corresponde el dato.
+
+   Debajo de 640 px cada fila se convierte en una ficha y cada celda lleva
+   delante el nombre de su columna, que se toma de `data-col`. Sigue siendo
+   una <table> de verdad, así que un lector de pantalla la recorre igual.
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .table-wrap.es-ficha { border: 0; background: none; overflow: visible; }
+  .table-wrap.es-ficha table.data { min-width: 0; display: block; }
+  .table-wrap.es-ficha thead { display: none; }
+  .table-wrap.es-ficha tbody { display: block; }
+
+  .table-wrap.es-ficha tbody tr {
+    display: block;
+    padding: var(--s-3) var(--s-4);
+    margin-bottom: var(--s-2);
+    background: var(--paper-raised);
+    border: 1px solid var(--line); border-radius: var(--r-md);
+  }
+  .table-wrap.es-ficha tbody tr:hover { background: var(--paper-raised); }
+  .table-wrap.es-ficha tbody tr.is-me { background: var(--azul-tint); }
+
+  /* Sangría francesa en lugar de rejilla.
+     Con `display:grid` + `subgrid` cada hijo de la celda se convierte en un
+     elemento de la rejilla, así que una celda como `<b>0,01</b> kg` mandaba el
+     "kg" a una fila nueva y a la primera columna. Con un bloque y un rótulo
+     `inline-block` de ancho fijo, el contenido de la celda sigue siendo texto
+     en línea: `<b>`, texto suelto y `<br>` se comportan como siempre, y lo que
+     no cabe se alinea debajo del valor y no debajo del rótulo. */
+  .table-wrap.es-ficha tbody td {
+    display: block; border: 0;
+    padding: 3px 0 3px 9.5em;
+    text-indent: -9.5em;
+    text-align: left !important;
+  }
+  .table-wrap.es-ficha tbody td::before {
+    content: attr(data-col);
+    display: inline-block; width: 9.5em; text-indent: 0;
+    font-family: var(--font-mono); font-size: var(--t-micro);
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+  }
+  /* `text-indent` se hereda, y dentro de la celda hay etiquetas y distintivos
+     que son cajas propias: sin devolverles la sangría a cero, su texto se sale
+     de su caja hacia la izquierda y se monta encima del rótulo. */
+  .table-wrap.es-ficha tbody td > * { text-indent: 0; }
+  /* La celda de acciones no lleva rótulo: el botón ya se explica solo. */
+  .table-wrap.es-ficha tbody td[data-col=""] {
+    padding-left: 0; text-indent: 0; margin-top: var(--s-2);
+  }
+  .table-wrap.es-ficha tbody td[data-col=""]::before { content: none; display: none; }
+
+  .table-wrap.es-ficha tfoot { display: block; }
+  .table-wrap.es-ficha tfoot tr {
+    display: flex; justify-content: space-between; gap: var(--s-3);
+    padding: var(--s-3) var(--s-4);
+    border: 1px solid var(--line); border-radius: var(--r-md);
+  }
+  .table-wrap.es-ficha tfoot td { border: 0; padding: 0; }
+}

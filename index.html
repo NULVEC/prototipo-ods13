@@ -1,12 +1,36 @@
 <!doctype html>
-<html lang="es-CR">
+<html lang="es-CR" data-tema="auto">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- `viewport-fit=cover` deja que el contenido llegue hasta el borde en los
+       teléfonos con muesca; las barras fijas se apartan con env(safe-area-*). -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Sistema de Registro y Seguimiento de Acciones Climáticas · ODS 13</title>
-  <meta name="description" content="Prototipo navegable del sistema de registro y seguimiento de acciones climáticas (ODS 13). Universidad Fidélitas, SC-302 Documentación del Software.">
-  <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#0c2921">
+  <meta name="description" content="Registrá lo que ya hacés —reciclar, moverte sin carro, ahorrar agua o luz— y mirá en kilos de CO₂ cuánto pesa de verdad. Prototipo funcional del sistema de acciones climáticas (ODS 13). Universidad Fidélitas, SC-302.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#0c2921" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#060e0c" media="(prefers-color-scheme: dark)">
+  <meta name="application-name" content="Acciones Climáticas">
+  <meta name="apple-mobile-web-app-title" content="Acciones Climáticas">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <!-- ==========================================================================
+       TEMA, ANTES DE PINTAR
+
+       Tiene que ser un script en línea y tiene que ir aquí arriba. Si la
+       elección de tema se leyera desde `ui.js` (que va con `defer`, o sea
+       después de construir el documento), el navegador ya habría pintado una
+       pantalla clara y quien eligió oscuro vería un destello blanco en cada
+       recarga. Son seis líneas a cambio de eso.
+       ========================================================================== -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('ods13.tema');
+        document.documentElement.dataset.tema = (t === 'claro' || t === 'oscuro') ? t : 'auto';
+      } catch (e) { /* navegación privada sin almacenamiento: queda en auto */ }
+    })();
+  </script>
 
   <!-- Tipografía: Bricolage Grotesque para titulares (voz con carácter),
        IBM Plex Sans para texto e interfaz, IBM Plex Mono para datos. -->
@@ -21,7 +45,9 @@
   <link rel="stylesheet" href="assets/css/components.css">
   <link rel="stylesheet" href="assets/css/screens.css">
 
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230c2921' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 1.6 21 6.8v10.4L12 22.4 3 17.2V6.8z'/><path d='M8 15.4v-2.6M12 15.4v-5.2M16 15.4V8.6'/></svg>">
+  <link rel="apple-touch-icon" href="assets/icono.svg">
 </head>
 
 <body>
@@ -47,32 +73,62 @@
     <p class="arranque-estado">Estableciendo la sesión…</p>
   </div>
 
+  <!-- Sin JavaScript no hay aplicación, pero tampoco puede quedar una pantalla
+       de carga girando para siempre: se dice qué pasa y qué hacer. -->
+  <noscript>
+    <!-- Este <style> solo se aplica cuando el navegador tiene el guion
+         desactivado, que es justo cuando la pantalla de carga no la va a
+         quitar nadie. -->
+    <style>#arranque { display: none; }</style>
+    <div class="sin-js">
+      <h1>Hace falta JavaScript</h1>
+      <p>Este sistema calcula el CO₂ evitado en el navegador, así que necesita
+         JavaScript activado. Actívalo y volvé a cargar la página.</p>
+    </div>
+  </noscript>
+
   <!-- Librería de gráficos, servida localmente para funcionar sin conexión -->
-  <script src="assets/vendor/chart.umd.js"></script>
+  <script defer src="assets/vendor/chart.umd.js"></script>
+
+  <!-- ==========================================================================
+       ORDEN DE CARGA
+
+       Todos van con `defer`: se descargan en paralelo mientras el navegador
+       termina de construir la página y se ejecutan después, pero SIEMPRE en
+       este orden, que es lo que hace que las dependencias se cumplan. Sin
+       `defer`, cada etiqueta detenía el análisis del documento y la primera
+       pintura esperaba a los veinte archivos.
+
+       Los `type="module"` del final ya eran diferidos por definición y se
+       ejecutan a continuación, en el mismo orden del documento.
+       ========================================================================== -->
 
   <!-- Núcleo -->
-  <script src="assets/js/icons.js"></script>
-  <script src="assets/js/data.js"></script>
-  <script src="assets/js/ui.js"></script>
-  <script src="assets/js/charts.js"></script>
-  <script src="assets/js/fiesta.js"></script>
+  <script defer src="assets/js/tema.js"></script>
+  <script defer src="assets/js/icons.js"></script>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/ui.js"></script>
+  <script defer src="assets/js/charts.js"></script>
+  <script defer src="assets/js/fiesta.js"></script>
 
-  <!-- Una pantalla por caso de uso (UC1 a UC10) -->
-  <script src="assets/js/screens/auth.js"></script>
-  <script src="assets/js/screens/inicio.js"></script>
-  <script src="assets/js/screens/accion.js"></script>
-  <script src="assets/js/screens/progreso.js"></script>
-  <script src="assets/js/screens/notificaciones.js"></script>
-  <script src="assets/js/screens/insignias.js"></script>
-  <script src="assets/js/screens/comunidad.js"></script>
-  <script src="assets/js/screens/reporte.js"></script>
-  <script src="assets/js/screens/perfil.js"></script>
+  <!-- Una pantalla por caso de uso (UC1 a UC10) más la de administración -->
+  <script defer src="assets/js/screens/auth.js"></script>
+  <script defer src="assets/js/screens/inicio.js"></script>
+  <script defer src="assets/js/screens/accion.js"></script>
+  <script defer src="assets/js/screens/progreso.js"></script>
+  <script defer src="assets/js/screens/notificaciones.js"></script>
+  <script defer src="assets/js/screens/insignias.js"></script>
+  <script defer src="assets/js/screens/comunidad.js"></script>
+  <script defer src="assets/js/screens/reporte.js"></script>
+  <script defer src="assets/js/screens/perfil.js"></script>
+  <script defer src="assets/js/screens/admin.js"></script>
 
-  <!-- Enrutador, explicador, modo presentación y arranque -->
-  <script src="assets/js/router.js"></script>
-  <script src="assets/js/explicador.js"></script>
-  <script src="assets/js/presentacion.js"></script>
-  <script src="assets/js/app.js"></script>
+  <!-- Enrutador, explicador, paleta de comandos, modo presentación y arranque -->
+  <script defer src="assets/js/router.js"></script>
+  <script defer src="assets/js/explicador.js"></script>
+  <script defer src="assets/js/paleta.js"></script>
+  <script defer src="assets/js/presentacion.js"></script>
+  <script defer src="assets/js/app.js"></script>
 
   <!-- Escenas tridimensionales. Van antes que nube.js porque los módulos se
        ejecutan en el orden en que aparecen y la aplicación arranca desde

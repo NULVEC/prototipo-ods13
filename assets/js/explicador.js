@@ -32,7 +32,14 @@ const Explicador = (() => {
       texto: `De una multiplicación, nada más. Anotás <b>cuánto</b> hiciste
               (5 km en bus, 2 kg de latas) y la app lo multiplica por lo que
               ahorra cada unidad.`,
-      pie: '5 km en bus × 0,103 = 0,52 kg de CO₂ evitados.'
+      /* El ejemplo se calcula con el factor de verdad. Escrito a mano se quedó
+         viejo una vez ya —decía 0,103 cuando el factor pasó a 0,098— y le
+         enseñaba al recién llegado una cuenta que no cuadraba con la pantalla
+         que iba a ver a continuación. */
+      pie: () => {
+        const bus = DB.tipoDe('transporte', 'autobus').factor;
+        return `5 km en bus × ${DB.fmt.n(bus, 3)} = ${DB.fmt.n(5 * bus, 2)} kg de CO₂ evitados.`;
+      }
     },
     {
       icono: 'arboles',
@@ -68,7 +75,9 @@ const Explicador = (() => {
           <span class="label-micro">Paso ${paso + 1} de ${PASOS.length}</span>
           <h2>${p.titulo}</h2>
           <p class="explica-texto">${p.texto}</p>
-          <p class="explica-pie">${Icon.get('info', 14)}<span>${p.pie}</span></p>
+          <p class="explica-pie">${Icon.get('info', 14)}<span>${
+            typeof p.pie === 'function' ? UI.esc(p.pie()) : p.pie
+          }</span></p>
           <div class="explica-puntos" aria-hidden="true">
             ${PASOS.map((_, i) => `<i class="${i === paso ? 'is-aqui' : ''}"></i>`).join('')}
           </div>

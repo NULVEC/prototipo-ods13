@@ -20,6 +20,35 @@ Screens.progreso = {
     const activos = dias.filter(d => d.co2 > 0).length;
     const mejor = dias.reduce((a, b) => b.co2 > a.co2 ? b : a, dias[0]);
 
+    /* --------------------------------------------------------------------
+       Estado inicial del UC5.
+
+       Con una cuenta recién creada esta pantalla mostraba cuatro lecturas en
+       cero, dos gráficos vacíos y un "tu mejor día: 0,00 kg" fechado en un día
+       cualquiera — que es peor que no mostrar nada, porque parece que la
+       aplicación está rota. El README ya prometía que una cuenta vacía era la
+       mejor forma de enseñar los estados iniciales de UC3 y UC5; UC3 lo tenía
+       y UC5 no.
+       ------------------------------------------------------------------ */
+    if (!DB.state.registros.length) {
+      return `
+        <div class="panel">
+          <div class="empty">
+            ${Icon.get('progreso', 34, 1.5)}
+            <h3>Todavía no hay nada que medir</h3>
+            <p>Esta pantalla compara tus semanas, te dice qué días sos más constante y de
+               dónde sale cada kilo de CO₂ que evitás. Para eso necesita al menos un
+               registro — con el primero ya aparecen las cifras.</p>
+            <a class="btn btn-primary" href="#/nueva-accion">
+              ${Icon.get('accion', 16)}<span>Registrar mi primera acción</span>
+            </a>
+            <p class="text-sm muted" style="margin-top:var(--s-5)">
+              Podés anotar algo que hiciste ayer o la semana pasada: no perdiste nada.
+            </p>
+          </div>
+        </div>`;
+    }
+
     return `
       <section class="section">
         <div class="section-head">
@@ -120,8 +149,12 @@ Screens.progreso = {
       </div></div>`;
     }
 
+    /* `es-ficha` y los `data-col`: en pantalla angosta cada fila se convierte
+       en una tarjeta con el nombre de la columna delante de cada dato. Seis
+       columnas dentro de un contenedor con desplazamiento horizontal obligan a
+       arrastrar para leer una sola fila. Ver components.css. */
     return `
-      <div class="table-wrap">
+      <div class="table-wrap es-ficha">
         <table class="data">
           <caption class="sr-only">Historial de acciones sostenibles registradas</caption>
           <thead>
@@ -139,12 +172,12 @@ Screens.progreso = {
               const c = DB.CATEGORIAS[r.categoria];
               const t = DB.tipoDe(r.categoria, r.tipo);
               return `<tr>
-                <td class="mono">${DB.fmt.fechaCorta(r.fecha)}</td>
-                <td><span class="tag" style="border-color:${c.color}55;color:${c.colorTexto}">${c.nombre}</span></td>
-                <td>${UI.esc(t.nombre)}${r.nota ? `<br><span class="text-sm muted">${UI.esc(r.nota)}</span>` : ''}</td>
-                <td class="align-r mono">${DB.fmt.n(r.cantidad, 2)} ${c.unidad}</td>
-                <td class="align-r mono"><b>${DB.fmt.co2(r.co2)}</b> kg</td>
-                <td class="align-r">
+                <td class="mono" data-col="Fecha">${DB.fmt.fechaCorta(r.fecha)}</td>
+                <td data-col="Categoría"><span class="tag" style="border-color:${c.color}55;color:${c.colorTexto}">${c.nombre}</span></td>
+                <td data-col="Acción">${UI.esc(t.nombre)}${r.nota ? `<br><span class="text-sm muted">${UI.esc(r.nota)}</span>` : ''}</td>
+                <td class="align-r mono" data-col="Cantidad">${DB.fmt.n(r.cantidad, 2)} ${c.unidad}</td>
+                <td class="align-r mono" data-col="CO₂ evitado"><b>${DB.fmt.co2(r.co2)}</b> kg</td>
+                <td class="align-r" data-col="">
                   <button class="btn btn-icon" type="button" data-borrar="${r.id}"
                           aria-label="Eliminar el registro del ${DB.fmt.fecha(r.fecha)}">
                     ${Icon.get('basura', 16)}
@@ -161,6 +194,9 @@ Screens.progreso = {
   },
 
   mount() {
+    // En el estado vacío no hay gráficos ni filtros que enlazar.
+    if (!DB.state.registros.length) return;
+
     const p = this.periodo;
     const lista = DB.enUltimosDias(p);
 
@@ -196,6 +232,11 @@ Screens.progreso = {
           { texto: 'Sí, borrar', clase: 'btn-danger', icono: 'basura', onClick: () => {
               DB.eliminarRegistro(id);
               UI.toast('Listo, se borró', 'Ya se recalculó todo lo demás.', 'info');
+              /* Un borrado cambia los totales, los gráficos y la cinta, así que
+                 aquí sí hay que redibujar la pantalla entera; lo que no puede
+                 quedarse desfasado es el armazón. */
+              Router.refrescarCinta();
+              Router.refrescarMeta();
               Router.resolver();
             } }
         ]

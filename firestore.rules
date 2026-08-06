@@ -11,6 +11,29 @@ rules_version = '2';
  * Sin estas reglas desplegadas la base queda abierta o cerrada por completo,
  * según el modo con que se haya creado. La apiKey del cliente no protege nada:
  * esto sí.
+ *
+ * ---------------------------------------------------------------------------
+ * SOBRE LOS PERMISOS DE ADMINISTRADOR
+ *
+ * El papel de administrador se decide por el correo del token de
+ * Authentication, que firma Firebase y el cliente no puede alterar.
+ *
+ * Lo que NO se hizo, y por qué: guardar `rol: "admin"` en el documento del
+ * usuario. Las reglas le dan a cada persona permiso de escritura sobre su
+ * propio perfil —lo necesita para editarlo en el UC10—, así que cualquiera
+ * podría escribirse el campo y ascenderse solo. Una comprobación de permisos
+ * tiene que apoyarse en algo que el cliente no controle.
+ *
+ * Lo ideal en producción sería un `custom claim` puesto con el Admin SDK, que
+ * evita esta lista escrita a mano. Requiere un proceso de servidor, y este
+ * proyecto no tiene ninguno: corre entero en el navegador. El correo del token
+ * es la alternativa correcta bajo esa restricción, y se comprueba en los dos
+ * lados —aquí y en `data.js`— contra la misma lista.
+ *
+ * Además se blinda el perfil: aunque a alguien se le ocurriera escribir un
+ * campo `rol`, la escritura se rechaza. Así no queda en la base un campo que
+ * parezca conceder permisos y despiste a quien la lea más adelante.
+ * ---------------------------------------------------------------------------
  */
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,9 +46,27 @@ service cloud.firestore {
       return autenticado() && request.auth.uid == uid;
     }
 
+    /* El correo verificado del token, en minúscula. `request.auth.token.email`
+       lo emite Firebase Authentication: no viaja en el cuerpo de la petición y
+       no se puede falsificar desde el cliente. */
+    function correo() {
+      return autenticado() && request.auth.token.email != null
+        ? request.auth.token.email.lower() : '';
+    }
+
+    function esAdmin() {
+      return correo() in ['ecoto70818@ufide.ac.cr'];
+    }
+
     /* ---- Datos personales: perfil, registros, notificaciones y logros ---- */
     match /usuarios/{uid} {
-      allow read, write: if esDuenno(uid);
+      allow read: if esDuenno(uid);
+
+      /* El perfil no admite un campo `rol`: el papel no se guarda, se deriva
+         del token. `correo` sí se puede escribir, porque el UC10 lo edita,
+         pero no concede nada por sí mismo — los permisos miran el token. */
+      allow write: if esDuenno(uid)
+        && !request.resource.data.keys().hasAny(['rol', 'roles', 'admin', 'permisos']);
 
       match /{documento=**} {
         allow read, write: if esDuenno(uid);
@@ -52,7 +93,24 @@ service cloud.firestore {
         && request.resource.data.acciones is int
         && request.resource.data.acciones >= 0;
 
-      allow delete: if esDuenno(uid);
+      /* Cada quien puede retirar su propia fila —pasa al borrar la cuenta— y
+         un administrador puede retirar la de cualquiera: es la moderación de
+         la comparativa. Retirar es lo más que se le permite: no puede editar
+         la cifra de otra persona, porque entonces el ranking dejaría de ser un
+         reflejo de lo que la gente registró. */
+      allow delete: if esDuenno(uid) || esAdmin();
+    }
+
+    /* ---- Información ambiental (UC3) ------------------------------------
+     * El contenido educativo que ve todo el mundo. Lo lee cualquier cuenta
+     * autenticada y lo publica solo un administrador: es la razón de existir
+     * del papel. Sin esta colección, "administrar" no administraría nada.
+     */
+    match /contenido/{documento} {
+      allow read: if autenticado();
+      allow write: if esAdmin()
+        && request.resource.data.articulos is list
+        && request.resource.data.articulos.size() <= 40;
     }
 
     /* ---- Todo lo demás queda denegado ----------------------------------- */

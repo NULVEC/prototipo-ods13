@@ -28,8 +28,14 @@ Screens.inicio = {
       const diff = (new Date().setHours(0, 0, 0, 0) - d) / 86400000;
       return diff >= 7 && diff < 14;
     });
-    const varSem = DB.sumaCO2(semAnterior) > 0
-      ? Math.round((DB.sumaCO2(sem) / DB.sumaCO2(semAnterior) - 1) * 100) : 0;
+    /* Sin semana anterior no hay variación que calcular. Antes devolvía 0 y la
+       lectura decía "+0 % mejor que la semana pasada", que es una afirmación
+       falsa cuando la semana pasada no existió: en una cuenta nueva se leía
+       como si no hubiera habido progreso. Ahora se distingue el caso. */
+    const co2Anterior = DB.sumaCO2(semAnterior);
+    const hayComparacion = co2Anterior > 0;
+    const varSem = hayComparacion
+      ? Math.round((DB.sumaCO2(sem) / co2Anterior - 1) * 100) : 0;
 
     const racha = DB.racha();
     const tabla = DB.tablaComunidad();
@@ -68,9 +74,11 @@ Screens.inicio = {
           pie: `Desde el ${DB.fmt.fecha(u.desde)}` })}
         ${UI.readout({ etiqueta: 'Esta semana', icono: 'pulso', tono: 'is-accent',
           valor: `<span data-contar="${DB.sumaCO2(sem).toFixed(2)}" data-dec="2">0,00</span>`, unidad: 'kg',
-          pie: `<span class="delta ${varSem >= 0 ? 'delta-up' : 'delta-down'}">
-                  ${Icon.get(varSem >= 0 ? 'subiendo' : 'bajando', 13)}
-                  ${varSem >= 0 ? '+' : ''}${varSem} %</span> ${varSem >= 0 ? 'mejor' : 'menos'} que la semana pasada` })}
+          pie: hayComparacion
+            ? `<span class="delta ${varSem >= 0 ? 'delta-up' : 'delta-down'}">
+                 ${Icon.get(varSem >= 0 ? 'subiendo' : 'bajando', 13)}
+                 ${varSem >= 0 ? '+' : ''}${varSem} %</span> ${varSem >= 0 ? 'mejor' : 'menos'} que la semana pasada`
+            : 'Tu primera semana: la próxima ya se puede comparar' })}
         ${UI.readout({ etiqueta: 'Acciones registradas', icono: 'accion',
           valor: `<span data-contar="${DB.state.registros.length}" data-dec="0">0</span>`, unidad: '',
           pie: `${sem.length} en los últimos 7 días` })}

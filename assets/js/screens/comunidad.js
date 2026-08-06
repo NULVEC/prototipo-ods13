@@ -22,18 +22,37 @@ Screens.comunidad = {
   render() {
     const alias = DB.state.usuario.alias;
     const completa = DB.tablaComunidad();
-    const zonas = ['todas', ...new Set(completa.map(c => c.zona))];
-    const tabla = this.zona === 'todas'
-      ? completa
-      : completa.filter(c => c.zona === this.zona || c.alias === alias);
-
-    const simulados = tabla.filter(c => c.simulado).length;
     const yo = completa.find(c => c.alias === alias);
-    const promedio = completa.reduce((a, c) => a + c.co2, 0) / completa.length;
+    /* Con la comparativa desactivada en el perfil, `completa` puede quedar
+       vacía: hay que salir antes de dividir por su tamaño. */
+    const promedio = completa.length
+      ? completa.reduce((a, c) => a + c.co2, 0) / completa.length : 0;
     const lider = completa[0];
     const dif = yo ? yo.co2 - promedio : 0;
     const porEncima = completa.filter(c => c.co2 < (yo?.co2 ?? 0)).length;
-    const percentil = Math.round(porEncima / (completa.length - 1) * 100);
+    /* El denominador es "los demás", no "todos": uno no se compara consigo
+       mismo. Con un solo participante daría 0/0 = NaN y la pantalla mostraría
+       «Le ganás al NaN %», así que se acota. */
+    const otros = Math.max(1, completa.length - 1);
+    const percentil = yo ? Math.round(porEncima / otros * 100) : 0;
+
+    /* Si la persona se salió de la comparativa (UC10 → Privacidad), esta
+       pantalla no tiene nada que decirle: se explica y se ofrece el camino de
+       vuelta, en lugar de dibujar un ranking donde no está. */
+    if (!DB.enComunidad()) {
+      return `
+        <div class="panel">
+          <div class="empty">
+            ${Icon.get('escudo', 34, 1.5)}
+            <h3>Estás fuera de la comparativa</h3>
+            <p>Pediste no participar, así que no aparecés en la tabla ni en el podio y tu
+               fila se retiró. Tu progreso propio sigue intacto en Mi progreso.</p>
+            <button class="btn btn-primary" type="button" data-ir="/perfil">
+              ${Icon.get('perfil', 16)}<span>Cambiarlo en mi perfil</span>
+            </button>
+          </div>
+        </div>`;
+    }
 
     /* Mensaje según dónde quedó: felicitar a quien va primero y no regañar a
        quien va último es la diferencia entre motivar y desanimar. */
@@ -114,6 +133,30 @@ Screens.comunidad = {
         </div>
       </section>
 
+      <div id="zona-tabla">${this.tablaCompleta()}</div>`;
+  },
+
+  /* --------------------------------------------------------------------
+     La tabla completa, aparte del resto de la pantalla.
+
+     Está separada porque es lo único que cambia al filtrar por provincia.
+     Antes el filtro llamaba a `Router.resolver()` y con eso se rehacía toda
+     la pantalla: se liberaba el contexto WebGL del podio para volver a
+     crearlo, con su animación desde cero, y se reconstruía el gráfico de
+     Chart.js. Todo para cambiar unas filas.
+     ------------------------------------------------------------------ */
+  tablaCompleta() {
+    const alias = DB.state.usuario.alias;
+    const completa = DB.tablaComunidad();
+    const zonas = ['todas', ...new Set(completa.map(c => c.zona))];
+    const tabla = this.zona === 'todas'
+      ? completa
+      : completa.filter(c => c.zona === this.zona || c.alias === alias);
+    const promedio = completa.length
+      ? completa.reduce((a, c) => a + c.co2, 0) / completa.length : 0;
+    const simulados = tabla.filter(c => c.simulado).length;
+
+    return `
       <section class="section">
         <div class="section-head">
           <h2>La tabla completa</h2>
@@ -153,7 +196,7 @@ Screens.comunidad = {
               </button>
             </div>
           </div>` : `
-        <div class="table-wrap">
+        <div class="table-wrap es-ficha">
           <table class="data">
             <caption class="sr-only">Comparativa comunitaria anónima</caption>
             <thead>
@@ -170,17 +213,17 @@ Screens.comunidad = {
               ${tabla.map(c => {
                 const d = c.co2 - promedio;
                 return `<tr class="${c.alias === alias ? 'is-me' : ''}">
-                  <td class="mono">${c.pos}</td>
-                  <td><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <td class="mono" data-col="Puesto">${c.pos}</td>
+                  <td data-col="Alias"><span style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap">
                     <span class="avatar avatar-sm">${c.alias.slice(0, 2).toUpperCase()}</span>
                     <b>${UI.esc(c.alias)}</b>
                     ${c.alias === alias ? '<span class="tag tag-azul">vos</span>' : ''}
                     ${c.simulado ? '<span class="tag">simulado</span>' : ''}
                   </span></td>
-                  <td>${UI.esc(c.zona)}</td>
-                  <td class="align-r mono">${c.acciones}</td>
-                  <td class="align-r mono"><b>${DB.fmt.n(c.co2, 1)}</b> kg</td>
-                  <td class="align-r mono">
+                  <td data-col="Provincia">${UI.esc(c.zona)}</td>
+                  <td class="align-r mono" data-col="Acciones">${c.acciones}</td>
+                  <td class="align-r mono" data-col="CO₂ evitado"><b>${DB.fmt.n(c.co2, 1)}</b> kg</td>
+                  <td class="align-r mono" data-col="vs. promedio">
                     <span class="delta ${d >= 0 ? 'delta-up' : 'delta-down'}">
                       ${d >= 0 ? '+' : ''}${DB.fmt.n(d, 1)}
                     </span>
@@ -202,25 +245,45 @@ Screens.comunidad = {
   },
 
   mount() {
+    if (!DB.enComunidad()) return;
+
     const alias = DB.state.usuario.alias;
     const completa = DB.tablaComunidad();
-    const tabla = this.zona === 'todas'
-      ? completa
-      : completa.filter(c => c.zona === this.zona || c.alias === alias);
 
     this.montarPodio(completa, alias);
-
     Charts.contraComunidad('g-comparativa', DB.serieSemanal(12));
 
-    document.getElementById('c-zona').addEventListener('change', e => {
+    /* El filtro de provincia solo cambia la tabla, así que solo se redibuja la
+       tabla. Antes llamaba a `Router.resolver()`, que rehacía la pantalla
+       entera: eso liberaba el contexto WebGL del podio y lo volvía a crear —
+       con su animación de crecimiento desde cero— y reconstruía el gráfico de
+       Chart.js, todo para cambiar seis filas de un `<tbody>`. */
+    document.getElementById('c-zona')?.addEventListener('change', e => {
       this.zona = e.target.value;
-      Router.resolver();
+      this.repintarTabla();
     });
 
+    this.conectarSalida();
+  },
+
+  /** Vuelve a dibujar solo la sección de la tabla completa. */
+  repintarTabla() {
+    const caja = document.getElementById('zona-tabla');
+    if (!caja) return;
+    caja.innerHTML = this.tablaCompleta();
+    this.conectarSalida();
+    // El desplegable se rehace con la tabla: hay que volver a enlazarlo.
+    document.getElementById('c-zona')?.addEventListener('change', e => {
+      this.zona = e.target.value;
+      this.repintarTabla();
+    });
+  },
+
+  conectarSalida() {
     // Salida del estado sin comparación: vuelve a todas las provincias.
     UI.$$('[data-ver-todas]').forEach(b => b.addEventListener('click', () => {
       this.zona = 'todas';
-      Router.resolver();
+      this.repintarTabla();
     }));
   },
 

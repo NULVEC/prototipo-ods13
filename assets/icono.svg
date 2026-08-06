@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img"
+     aria-label="Sello hexagonal con una traza ascendente de tres barras">
+  <title>Registro y Seguimiento de Acciones Climáticas</title>
+  <rect width="512" height="512" rx="96" fill="#0c2921"/>
+  <!-- Mismo sello y misma traza que la marca del sistema (Icon.mark). -->
+  <g fill="none" stroke="#5b9be8" stroke-width="26"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 90 400 173v166l-144 83-144-83V173z"/>
+    <path d="M192 326v-42M256 326v-83M320 326v-110"/>
+  </g>
+</svg>

@@ -20,9 +20,24 @@ Screens.reporte = {
     const serie = DB.serieMensual(this.meses);
     const folio = 'RPT-' + DB.hoyISO().replace(/-/g, '') + '-' + u.id.slice(-4);
 
-    /* Emisión de referencia: lo que habría emitido de no realizar ninguna
-       de las acciones registradas. Sirve para dar contexto al total. */
-    const lineaBase = total / 0.18;   // el ahorro representa ~18 % de la línea base simulada
+    /* --------------------------------------------------------------------
+       Aquí había una "emisión de referencia" calculada como `total / 0.18`,
+       y al lado una lectura que decía «18,0 %» de ahorro. Las dos salían de
+       la misma constante inventada, así que el porcentaje era siempre 18 %
+       para todo el mundo, hicieran lo que hicieran. Un reporte que se
+       presenta como documento no puede llevar una cifra circular: es
+       precisamente lo que alguien miraría primero para desconfiar del resto.
+
+       Se reemplazan por dos números que salen de los datos:
+
+         · el promedio diario del periodo, que se puede comprobar dividiendo;
+         · de dónde vino la mayor parte del ahorro, que es la información
+           que de verdad sirve para decidir qué hacer después.
+       ------------------------------------------------------------------ */
+    const diasConDatos = Math.max(1, dias);
+    const promedioDia = total / diasConDatos;
+    const principal = cats[0];
+    const pesoPrincipal = total ? principal.co2 / total * 100 : 0;
 
     return `
       <section class="section">
@@ -32,10 +47,10 @@ Screens.reporte = {
               <span class="label-micro">Documento generado por el sistema</span>
               <h1 style="margin:var(--s-2) 0 var(--s-3)">Tu reporte de CO₂ evitado</h1>
               <p class="muted" style="max-width:62ch;margin:0">
-                Todo el CO₂ que ${UI.esc(u.nombre)} no soltó al aire gracias a las acciones que
-                registró aquí: lo que le fue restando a su ${UI.termino('huella', 'huella de carbono')}.
-                Es un cálculo aproximado, hecho con lo que anotó cada día, y se puede descargar
-                o imprimir para entregarlo.
+                Todo el CO₂ que ${UI.esc(u.nombre)} no soltó al aire gracias a lo que registró
+                acá: lo que le fue restando a su ${UI.termino('huella', 'huella de carbono')}.
+                Es un cálculo aproximado, hecho con lo que anotó cada día, y se puede
+                descargar o imprimir para entregarlo.
               </p>
             </div>
             <div style="display:flex;gap:var(--s-2);flex-wrap:wrap">
@@ -67,12 +82,15 @@ Screens.reporte = {
         ${UI.readout({ etiqueta: 'CO₂ que no soltaste', icono: 'globo',
           valor: DB.fmt.n(total, 1), unidad: 'kg',
           pie: `Lo mismo que capturan ${DB.fmt.n(total / 21, 1)} árboles en todo un año` })}
-        ${UI.readout({ etiqueta: 'Lo que habrías soltado', icono: 'fabrica', tono: 'is-ember',
-          valor: DB.fmt.n(lineaBase, 0), unidad: 'kg',
-          pie: 'Si no hubieras hecho ninguna de estas acciones' })}
-        ${UI.readout({ etiqueta: 'Lo que te ahorraste', icono: 'bajando', tono: 'is-accent',
-          valor: '18,0', unidad: '%',
-          pie: 'De todo eso, esta parte no llegó a pasar' })}
+        ${UI.readout({ etiqueta: `Por día, en promedio${UI.ayuda('promedio')}`, icono: 'pulso',
+          tono: 'is-accent',
+          valor: DB.fmt.n(promedioDia, 2), unidad: 'kg',
+          pie: `Repartido entre los ${dias} días del periodo` })}
+        ${UI.readout({ etiqueta: 'De dónde vino la mayor parte', icono: 'filtro', tono: 'is-ochre',
+          valor: DB.fmt.n(pesoPrincipal, 0), unidad: '%',
+          pie: total
+            ? `${UI.esc(principal.nombre)} · ${DB.fmt.co2(principal.co2)} kg de los ${DB.fmt.n(total, 1)}`
+            : 'Todavía no hay registros en este periodo' })}
       </section>
 
       <section class="section">
@@ -93,7 +111,7 @@ Screens.reporte = {
 
       <section class="section">
         <div class="section-head"><h2>La cuenta, categoría por categoría</h2></div>
-        <div class="table-wrap">
+        <div class="table-wrap es-ficha">
           <table class="data">
             <caption class="sr-only">Detalle del cálculo de emisiones evitadas por categoría</caption>
             <thead>
@@ -109,14 +127,14 @@ Screens.reporte = {
             <tbody>
               ${cats.map(c => `
                 <tr>
-                  <td><span style="display:inline-flex;align-items:center;gap:8px;color:${DB.CATEGORIAS[c.id].colorTexto}">
+                  <td data-col="Categoría"><span style="display:inline-flex;align-items:center;gap:8px;color:${DB.CATEGORIAS[c.id].colorTexto}">
                     ${Icon.get(DB.CATEGORIAS[c.id].icono, 16)}
                     <b style="color:var(--ink)">${c.nombre}</b></span></td>
-                  <td class="mono text-sm">${DB.CATEGORIAS[c.id].clase}</td>
-                  <td class="align-r mono">${c.registros}</td>
-                  <td class="align-r mono">${DB.fmt.n(c.cantidad, 1)} ${c.unidad}</td>
-                  <td class="align-r mono"><b>${DB.fmt.co2(c.co2)}</b> kg</td>
-                  <td class="align-r mono">${total ? DB.fmt.n(c.co2 / total * 100, 1) : '0,0'} %</td>
+                  <td class="mono text-sm" data-col="Clase">${DB.CATEGORIAS[c.id].clase}</td>
+                  <td class="align-r mono" data-col="Acciones">${c.registros}</td>
+                  <td class="align-r mono" data-col="Cuánto">${DB.fmt.n(c.cantidad, 1)} ${c.unidad}</td>
+                  <td class="align-r mono" data-col="CO₂ evitado"><b>${DB.fmt.co2(c.co2)}</b> kg</td>
+                  <td class="align-r mono" data-col="Peso">${total ? DB.fmt.n(c.co2 / total * 100, 1) : '0,0'} %</td>
                 </tr>`).join('')}
             </tbody>
             <tfoot>
@@ -236,11 +254,20 @@ Screens.reporte = {
       });
     }
 
-    document.getElementById('r-descargar').addEventListener('click', async e => {
+    /* La descarga entrega un archivo de verdad. Antes solo avisaba de que «el
+       backend devuelve el archivo PDF por la API REST», o sea que el botón
+       principal de la pantalla no hacía nada. Un PDF sí necesitaría servidor;
+       un CSV con el detalle del cálculo, no — y para revisar los números es
+       más útil, porque se abre en una hoja de cálculo y se puede recalcular. */
+    document.getElementById('r-descargar').addEventListener('click', e => {
       if (periodoVacio()) { avisarSinDatos(); return; }
-      await UI.cargando(e.currentTarget, 1100);
-      UI.toast('Reporte generado',
-        'En la versión final, el backend devuelve el archivo PDF por la API REST.', 'info');
+      const filas = DB.enUltimosDias(this.meses * 30).length;
+      UI.descargar(UI.nombreArchivo(`reporte-co2-${this.meses}meses`, 'csv'),
+        DB.csv(), 'text/csv;charset=utf-8');
+      UI.toast('Reporte descargado',
+        `${filas} registros con su factor y su fuente. Para el PDF, usá Imprimir → Guardar como PDF.`,
+        'info', 6000);
+      void e;
     });
 
     document.getElementById('r-imprimir').addEventListener('click', () => {

@@ -1,0 +1,42 @@
+{
+  "name": "Registro y Seguimiento de Acciones Climáticas",
+  "short_name": "Acciones Climáticas",
+  "description": "Registrá lo que ya hacés por el clima y mirá, en kilos de CO₂, cuánto pesa de verdad.",
+  "lang": "es-CR",
+  "dir": "ltr",
+  "start_url": "./index.html#/inicio",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c2921",
+  "theme_color": "#0c2921",
+  "categories": ["education", "utilities", "productivity"],
+  "icons": [
+    {
+      "src": "assets/icono.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icono-mascara.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registrar una acción",
+      "short_name": "Registrar",
+      "description": "Anotar algo que ya hiciste hoy",
+      "url": "./index.html#/nueva-accion"
+    },
+    {
+      "name": "Mi progreso",
+      "short_name": "Progreso",
+      "description": "Ver el CO₂ evitado y el historial",
+      "url": "./index.html#/progreso"
+    }
+  ]
+}

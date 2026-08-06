@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img"
+     aria-label="Sello hexagonal con una traza ascendente de tres barras">
+  <title>Registro y Seguimiento de Acciones Climáticas</title>
+  <!-- Versión enmascarable: el sistema operativo puede recortar esto con
+       cualquier forma, así que el dibujo se queda dentro del 80 % central
+       (la "zona segura" que exige la especificación) y el fondo llega a los
+       bordes para que no aparezca un halo blanco al recortar. -->
+  <rect width="512" height="512" fill="#0c2921"/>
+  <g fill="none" stroke="#5b9be8" stroke-width="22"
+     stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 128 371 194v132l-115 66-115-66V194z"/>
+    <path d="M205 311v-33M256 311v-66M307 311v-88"/>
+  </g>
+</svg>

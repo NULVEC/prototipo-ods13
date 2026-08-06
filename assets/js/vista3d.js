@@ -23,6 +23,32 @@ const activas = new Set();
 const sinMovimiento = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* Cuánto gira sola una escena al aparecer, en segundos. Es una presentación,
+   no una animación de fondo: pasado este tiempo se queda quieta. */
+const SEGUNDOS_DE_GIRO = 9;
+
+/* Y cuánto vuelve a girar cuando alguien le pasa el puntero por encima: lo
+   justo para que se lea como "esto se puede tomar y mover". */
+const SEGUNDOS_AL_TOCAR = 4;
+
+/* --------------------------------------------------------------------------
+   Color desde el sistema de diseño.
+
+   WebGL no entiende `var(--deep)`, así que hay que resolverlo a un número. Se
+   hace aquí para que el fondo de las escenas sea el mismo color que el panel
+   que las envuelve; con el valor escrito a mano, al cambiar al tema oscuro el
+   lienzo quedaba visiblemente más claro que su propio panel.
+   ----------------------------------------------------------------------- */
+export function tokenColor(nombre, respaldo = 0x0c2921) {
+  const crudo = getComputedStyle(document.documentElement).getPropertyValue(nombre).trim();
+  if (!crudo) return respaldo;
+  try {
+    return new THREE.Color(crudo).getHex();
+  } catch (e) {
+    return respaldo;
+  }
+}
+
 /* --------------------------------------------------------------------------
    Giro con arrastre. Se escribe a mano en lugar de traer OrbitControls:
    son treinta líneas y evita otra dependencia de 60 kB.
@@ -35,20 +61,32 @@ function conectarArrastre(lienzo, estado) {
   const inicio = e => {
     arrastrando = true;
     estado.auto = false;               // si la persona toma el control, se lo dejamos
+    estado.inercia = 0;
     const p = punto(e);
     xPrevio = p.clientX; yPrevio = p.clientY;
     lienzo.style.cursor = 'grabbing';
+    lienzo.classList.add('arrastrando');
   };
   const mover = e => {
     if (!arrastrando) return;
     const p = punto(e);
-    estado.angulo -= (p.clientX - xPrevio) * 0.008;
+    const dx = (p.clientX - xPrevio) * 0.008;
+    estado.angulo -= dx;
+    /* Se recuerda el último desplazamiento para que la escena siga girando un
+       instante al soltar. Es lo que separa "arrastrar una imagen" de "girar
+       un objeto que tiene peso". */
+    estado.inercia = -dx;
     estado.altura = Math.min(estado.alturaMax, Math.max(estado.alturaMin,
       estado.altura - (p.clientY - yPrevio) * 0.004));
     xPrevio = p.clientX; yPrevio = p.clientY;
     if (e.cancelable) e.preventDefault();
   };
-  const fin = () => { arrastrando = false; lienzo.style.cursor = 'grab'; };
+  const fin = () => {
+    if (!arrastrando) return;
+    arrastrando = false;
+    lienzo.style.cursor = 'grab';
+    lienzo.classList.remove('arrastrando');
+  };
 
   lienzo.addEventListener('mousedown', inicio);
   window.addEventListener('mousemove', mover);
@@ -56,6 +94,7 @@ function conectarArrastre(lienzo, estado) {
   lienzo.addEventListener('touchstart', inicio, { passive: true });
   lienzo.addEventListener('touchmove', mover, { passive: false });
   lienzo.addEventListener('touchend', fin);
+  lienzo.addEventListener('touchcancel', fin);
 
   return () => {
     window.removeEventListener('mousemove', mover);
@@ -113,7 +152,18 @@ export function crearVista(idContenedor, opciones = {}) {
 
   const estado = {
     angulo, altura, alturaMin, alturaMax,
+    /* El giro automático no es un interruptor sino un tiempo que se gasta: la
+       escena gira despacio unos segundos, lo suficiente para que se entienda
+       que tiene volumen y que se puede tomar con el dedo, y se detiene.
+
+       Girar para siempre —que es lo que hacía— tiene tres problemas: distrae
+       de la cifra que está justo al lado, cansa a los pocos segundos, y
+       mantiene la tarjeta gráfica dibujando toda la sesión por un efecto que
+       ya cumplió su función. El tiempo se mide en segundos y no en radianes
+       para que el número diga lo que dura. */
     auto: !sinMovimiento(),
+    giroRestante: SEGUNDOS_DE_GIRO,
+    inercia: 0,
     distancia
   };
   const soltarArrastre = conectarArrastre(renderer.domElement, estado);
@@ -124,6 +174,7 @@ export function crearVista(idContenedor, opciones = {}) {
     camara.aspect = a / h;
     camara.updateProjectionMatrix();
     renderer.setSize(a, h);
+    vista.pedirCuadro();
   });
   observador.observe(cont);
 
@@ -132,15 +183,25 @@ export function crearVista(idContenedor, opciones = {}) {
     reloj: new THREE.Clock(),
     cuadro: 0,
     alDibujar: null,      // la escena pone aquí su función de cada cuadro
-    viva: true
+    viva: true,
+    visible: true,        // lo maneja el observador de intersección
+    quieta: false         // true cuando ya no hay nada que animar
   };
 
-  function dibujar() {
-    if (!vista.viva) return;
-    vista.cuadro = requestAnimationFrame(dibujar);
+  /* ------------------------------------------------------------------------
+     Dibujar solo cuando hace falta.
 
-    if (estado.auto) estado.angulo += giroAuto;
+     Antes el bucle corría a 60 cuadros por segundo mientras la pantalla
+     estuviera abierta. En la pantalla de inicio hay DOS escenas, así que eran
+     120 renderizados por segundo de forma indefinida, incluso con el panel
+     fuera de la vista o la pestaña en segundo plano: el ventilador se oía y en
+     un portátil se notaba en la batería.
 
+     Ahora el bucle se detiene solo en cuanto no queda nada que animar, y se
+     vuelve a pedir un cuadro cuando algo cambia de verdad: un arrastre, un
+     cambio de tamaño, o la escena avisando de que sigue animando.
+     --------------------------------------------------------------------- */
+  function colocarCamara() {
     const inclinacion = estado.altura * Math.PI * 0.5;
     camara.position.set(
       Math.sin(estado.angulo) * Math.cos(inclinacion) * estado.distancia,
@@ -148,18 +209,87 @@ export function crearVista(idContenedor, opciones = {}) {
       Math.cos(estado.angulo) * Math.cos(inclinacion) * estado.distancia
     );
     camara.lookAt(vista.objetivo);
-
-    vista.alDibujar?.(vista.reloj.getDelta(), vista);
-    renderer.render(escena, camara);
   }
 
-  vista.arrancar = () => { if (!vista.cuadro) dibujar(); };
+  function dibujar() {
+    vista.cuadro = 0;
+    if (!vista.viva) return;
+
+    const dt = Math.min(0.1, vista.reloj.getDelta());
+    let sigue = false;
+
+    // Giro de presentación, mientras le quede tiempo.
+    if (estado.auto && estado.giroRestante > 0) {
+      estado.angulo += giroAuto * (dt * 60);
+      estado.giroRestante -= dt;
+      sigue = true;
+    }
+
+    // Inercia al soltar el arrastre: se apaga sola.
+    if (Math.abs(estado.inercia) > 0.00012) {
+      estado.angulo += estado.inercia;
+      estado.inercia *= Math.pow(0.94, dt * 60);
+      sigue = true;
+    } else {
+      estado.inercia = 0;
+    }
+
+    colocarCamara();
+
+    // La escena devuelve `true` mientras le quede animación por delante.
+    if (vista.alDibujar?.(dt, vista)) sigue = true;
+
+    renderer.render(escena, camara);
+
+    if (sigue && vista.visible) vista.cuadro = requestAnimationFrame(dibujar);
+    else vista.quieta = !sigue;
+  }
+
+  /** Pide un cuadro si no hay uno en cola. Es el único modo de reanudar. */
+  vista.pedirCuadro = () => {
+    if (!vista.viva || vista.cuadro || !vista.visible) return;
+    vista.quieta = false;
+    vista.reloj.getDelta();          // descarta el salto acumulado sin dibujar
+    vista.cuadro = requestAnimationFrame(dibujar);
+  };
+
+  vista.arrancar = () => { colocarCamara(); vista.pedirCuadro(); };
+
+  /* Se deja de dibujar cuando el panel sale de la pantalla. El umbral es 0 —
+     con un solo píxel visible ya se dibuja — para que nunca se vea un lienzo
+     congelado a medio entrar. */
+  const enPantalla = new IntersectionObserver(entradas => {
+    const visible = entradas.some(e => e.isIntersecting);
+    if (visible === vista.visible) return;
+    vista.visible = visible;
+    if (visible) vista.pedirCuadro();
+    else if (vista.cuadro) { cancelAnimationFrame(vista.cuadro); vista.cuadro = 0; }
+  }, { threshold: 0 });
+  enPantalla.observe(cont);
+
+  /* En segundo plano el navegador ya frena `requestAnimationFrame`, pero al
+     volver el reloj traería un salto de varios segundos y la animación daría
+     un brinco. Se descarta ese salto al regresar. */
+  const alVolver = () => { if (!document.hidden) vista.pedirCuadro(); };
+  document.addEventListener('visibilitychange', alVolver);
+
+  /* Al pasar el puntero por encima se entiende que se puede tocar: la escena
+     retoma un poco de giro. Es una invitación, no una animación permanente. */
+  const alEntrar = () => {
+    if (sinMovimiento()) return;
+    estado.giroRestante = Math.max(estado.giroRestante, SEGUNDOS_AL_TOCAR);
+    estado.auto = true;
+    vista.pedirCuadro();
+  };
+  renderer.domElement.addEventListener('pointerenter', alEntrar);
 
   vista.liberar = () => {
     if (!vista.viva) return;
     vista.viva = false;
     cancelAnimationFrame(vista.cuadro);
     observador.disconnect();
+    enPantalla.disconnect();
+    document.removeEventListener('visibilitychange', alVolver);
     soltarArrastre();
     escena.traverse(o => {
       o.geometry?.dispose();
@@ -210,4 +340,18 @@ export function rebote(t) {
 /* El enrutador llama a esto antes de cambiar de pantalla. */
 function destruirTodo() { [...activas].forEach(v => v.liberar()); }
 
-window.Vistas3D = { destruirTodo, get activas() { return activas.size; } };
+window.Vistas3D = {
+  destruirTodo,
+  get activas() { return activas.size; },
+  /* Cuántas escenas están pidiendo cuadros ahora mismo. Sirve para comprobar
+     que el bucle se detiene de verdad cuando no hay nada que animar: si esto
+     se queda en un número distinto de cero con la pantalla quieta, hay una
+     escena consumiendo tarjeta gráfica y batería para nada. */
+  get enMarcha() { return [...activas].filter(v => v.cuadro !== 0).length; },
+  get estado() {
+    return [...activas].map(v => ({
+      visible: v.visible, quieta: v.quieta, dibujando: v.cuadro !== 0,
+      giroRestante: +v.estado.giroRestante.toFixed(2)
+    }));
+  }
+};

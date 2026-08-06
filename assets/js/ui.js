@@ -4,6 +4,12 @@
    cinta de carbono (elemento de firma del sistema).
    ========================================================================= */
 
+/* Registro de pantallas. Vive aquí, en el núcleo, y no en la primera pantalla
+   que se cargue: son scripts clásicos, así que si dos declararan `Screens` el
+   navegador cortaría con un error de sintaxis. Cada archivo de `screens/` solo
+   añade su entrada. */
+const Screens = {};
+
 const UI = (() => {
 
   const $  = (sel, ctx = document) => ctx.querySelector(sel);
@@ -15,9 +21,26 @@ const UI = (() => {
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  /** Elementos que pueden recibir el foco dentro de un contenedor. */
+  function focosDe(ctx) {
+    return $$('a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]),' +
+              'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', ctx)
+      .filter(el => el.offsetParent !== null || el === document.activeElement);
+  }
+
+  /** `⌘` en Mac, `Ctrl` en el resto. Para escribir los atajos como son. */
+  const teclaMando = () =>
+    /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? '⌘' : 'Ctrl';
+
   /* ==================================================================
      AVISOS EMERGENTES
+
+     Se pueden cerrar a mano: un aviso de nueve segundos tapando la
+     esquina, sin forma de quitarlo, es peor que no tenerlo. Y se pausan
+     al pasar el puntero por encima, para poder acabar de leerlo.
      ================================================================== */
+  const MAX_AVISOS = 4;
+
   function toast(titulo, texto = '', tono = 'ok', ms = 4200) {
     let stack = $('.toast-stack');
     if (!stack) {
@@ -27,25 +50,44 @@ const UI = (() => {
       stack.setAttribute('aria-live', 'polite');
       document.body.appendChild(stack);
     }
+
+    /* Más de cuatro avisos apilados no se leen y tapan la pantalla: se retira
+       el más viejo antes de añadir otro. */
+    while (stack.children.length >= MAX_AVISOS) stack.firstElementChild.remove();
+
     const ico = tono === 'error' ? 'alertaCirculo' : tono === 'info' ? 'info' : 'checkCirculo';
     const el = document.createElement('div');
     el.className = `toast is-${tono}`;
-    el.innerHTML = `${Icon.get(ico, 18)}<div><b>${esc(titulo)}</b>${texto ? `<p>${esc(texto)}</p>` : ''}</div>`;
-    stack.appendChild(el);
-    setTimeout(() => {
+    el.innerHTML = `
+      ${Icon.get(ico, 18)}
+      <div class="toast-txt"><b>${esc(titulo)}</b>${texto ? `<p>${esc(texto)}</p>` : ''}</div>
+      <button class="toast-x" type="button" aria-label="Cerrar el aviso">${Icon.get('equis', 14)}</button>`;
+
+    const quitar = () => {
+      if (!el.isConnected) return;
       el.classList.add('is-out');
       el.addEventListener('animationend', () => el.remove(), { once: true });
-    }, ms);
+      // Si la animación no corre (movimiento reducido), se retira igual.
+      setTimeout(() => el.remove(), 400);
+    };
+
+    let reloj = setTimeout(quitar, ms);
+    el.addEventListener('pointerenter', () => clearTimeout(reloj));
+    el.addEventListener('pointerleave', () => { reloj = setTimeout(quitar, 1600); });
+    el.querySelector('.toast-x').addEventListener('click', () => { clearTimeout(reloj); quitar(); });
+
+    stack.appendChild(el);
+    return el;
   }
 
   /* ==================================================================
-     VENTANA MODAL  (foco atrapado + cierre con Escape)
+     VENTANA MODAL  (foco encerrado + cierre con Escape)
      ================================================================== */
   let modalPrevio = null;
 
   /* `etiqueta` nombra el diálogo para los lectores de pantalla cuando no
      lleva título visible (por ejemplo, la celebración de una insignia). */
-  function modal({ titulo, etiqueta, cuerpo, acciones = [], ancho }) {
+  function modal({ titulo, etiqueta, cuerpo, acciones = [], ancho, alCerrar }) {
     cerrarModal();
     modalPrevio = document.activeElement;
 
@@ -53,12 +95,13 @@ const UI = (() => {
     scrim.className = 'modal-scrim';
     scrim.innerHTML = `
       <div class="modal" role="dialog" aria-modal="true" aria-label="${esc(etiqueta || titulo || 'Diálogo')}"
-           ${ancho ? `style="width:min(${ancho}px,100%)"` : ''}>
+           tabindex="-1" ${ancho ? `style="width:min(${ancho}px,100%)"` : ''}>
         ${titulo ? `<div class="modal-head"><h2>${esc(titulo)}</h2></div>` : ''}
         <div class="modal-body">${cuerpo}</div>
         ${acciones.length ? '<div class="modal-foot"></div>' : ''}
       </div>`;
 
+    const caja = $('.modal', scrim);
     const foot = $('.modal-foot', scrim);
     acciones.forEach(a => {
       const b = document.createElement('button');
@@ -69,27 +112,70 @@ const UI = (() => {
     });
 
     scrim.addEventListener('mousedown', e => { if (e.target === scrim) cerrarModal(); });
+    modal.alCerrar = alCerrar || null;
     document.body.appendChild(scrim);
-    (foot?.lastElementChild || $('.modal', scrim)).focus?.();
-    document.addEventListener('keydown', onEsc);
+    /* El desplazamiento del fondo se bloquea: si no, la rueda del ratón mueve
+       la página detrás del diálogo y se pierde la referencia de dónde estaba. */
+    document.body.classList.add('con-modal');
+
+    /* El foco arranca en el primer campo si lo hay —es lo que la persona vino
+       a hacer— y si no, en la acción principal. Antes iba siempre al último
+       botón, así que en el diálogo de "escribí ELIMINAR" había que tabular
+       hacia atrás para llegar al campo. */
+    const primerCampo = $('input:not([type="hidden"]), textarea, select', caja);
+    (primerCampo || foot?.lastElementChild || caja).focus();
+
+    document.addEventListener('keydown', enTeclado, true);
     return scrim;
   }
 
-  function onEsc(e) { if (e.key === 'Escape') cerrarModal(); }
+  /* El foco no puede salirse del diálogo: es lo que lo vuelve modal de verdad.
+     Sin esto, tabular desde el último botón llevaba al contenido de detrás,
+     que sigue en el árbol y responde a la navegación por teclado. */
+  function enTeclado(e) {
+    const scrim = $('.modal-scrim');
+    if (!scrim) return;
+
+    if (e.key === 'Escape') { e.stopPropagation(); cerrarModal(); return; }
+    if (e.key !== 'Tab') return;
+
+    const caja = $('.modal', scrim);
+    const focos = focosDe(caja);
+    if (!focos.length) { e.preventDefault(); caja.focus(); return; }
+
+    const primero = focos[0], ultimo = focos[focos.length - 1];
+    const dentro = caja.contains(document.activeElement);
+
+    if (!dentro) { e.preventDefault(); (e.shiftKey ? ultimo : primero).focus(); }
+    else if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+  }
 
   function cerrarModal() {
     const s = $('.modal-scrim');
-    if (s) s.remove();
-    document.removeEventListener('keydown', onEsc);
+    if (!s) return;
+    s.remove();
+    document.removeEventListener('keydown', enTeclado, true);
+    document.body.classList.remove('con-modal');
+    const cb = modal.alCerrar;
+    modal.alCerrar = null;
     modalPrevio?.focus?.();
     modalPrevio = null;
+    cb?.();
   }
 
   /* ==================================================================
      BOTONES CON ESTADO DE CARGA
-     Simula la latencia del backend REST descrito en el Avance 3.
+
+     La espera solo se simula cuando NO hay nada que esperar: en modo
+     local no existe backend, y un guardado instantáneo se lee como si el
+     botón no hubiera hecho nada. Contra Firebase la escritura de verdad
+     ya tarda lo que tarda, así que añadirle 900 ms encima era hacer la
+     aplicación más lenta a propósito.
      ================================================================== */
   function cargando(btn, ms = 900) {
+    if (!btn) return Promise.resolve();
+    const espera = DB.state.modo === 'nube' ? Math.min(ms, 220) : ms;
     return new Promise(res => {
       btn.classList.add('is-loading');
       btn.setAttribute('aria-busy', 'true');
@@ -97,8 +183,19 @@ const UI = (() => {
         btn.classList.remove('is-loading');
         btn.removeAttribute('aria-busy');
         res();
-      }, ms);
+      }, espera);
     });
+  }
+
+  /** Marca un botón como ocupado mientras corre una promesa de verdad. */
+  async function conBoton(btn, tarea) {
+    btn?.classList.add('is-loading');
+    btn?.setAttribute('aria-busy', 'true');
+    try { return await tarea(); }
+    finally {
+      btn?.classList.remove('is-loading');
+      btn?.removeAttribute('aria-busy');
+    }
   }
 
   /* ==================================================================
@@ -219,6 +316,10 @@ const UI = (() => {
      autenticadas. Funciona como el "pulso" del instrumento: da
      continuidad entre casos de uso y contexto permanente al usuario.
      ================================================================== */
+  /* Datos de la cinta ya dibujada, para poder leerlos al pasar el puntero
+     sin recalcular la serie de noventa días en cada movimiento. */
+  let cintaDatos = null;
+
   function cintaCarbono(dias = 90) {
     const serie = DB.serieDiaria(dias);
     /* La escala usa el percentil 90 y no el máximo: un solo día atípico
@@ -226,32 +327,98 @@ const UI = (() => {
        traza y la cinta dejaría de leerse. Los días por encima se recortan. */
     const ordenados = serie.map(d => d.co2).sort((a, b) => a - b);
     const max = Math.max(ordenados[Math.floor(ordenados.length * 0.9)] || 0, 0.5);
-    const prom = serie.reduce((a, d) => a + d.co2, 0) / serie.length;
     const total = serie.reduce((a, d) => a + d.co2, 0);
+    const prom = total / serie.length;
     const hoy = DB.hoyISO();
+    const mejor = serie.reduce((a, d) => d.co2 > a.co2 ? d : a, serie[0]);
+    cintaDatos = serie;
 
+    /* ------------------------------------------------------------------
+       Las barras NO son botones.
+
+       Lo eran, y eso ponía noventa controles enfocables —que además no
+       hacían nada al pulsarlos— delante del contenido de TODAS las
+       pantallas privadas. Con teclado había que pasar noventa veces por el
+       tabulador antes de llegar al primer enlace útil.
+
+       Ahora la cinta es una figura: el dato completo va en su descripción
+       de texto, que es lo que lee un lector de pantalla, y el detalle día
+       a día aparece en la cabecera al pasar el puntero o el dedo. Un solo
+       control queda en el orden de tabulación —el enlace al historial—,
+       que es lo que alguien querría hacer al mirar la traza.
+       ------------------------------------------------------------------ */
     const barras = serie.map((d, i) => {
       const h = Math.min(100, Math.max(3, Math.round(d.co2 / max * 100)));
       const cls = d.fecha === hoy ? 'is-today' : d.co2 === 0 ? 'is-zero' : '';
-      return `<button type="button" class="ribbon-bar ${cls}"
-        style="--h:${h}%;--d:${i * 5}ms"
-        aria-label="${DB.fmt.fecha(d.fecha)}: ${DB.fmt.co2(d.co2)} kg de CO2e evitados"
-        title="${DB.fmt.fechaCorta(d.fecha)} · ${DB.fmt.co2(d.co2)} kg CO₂"></button>`;
+      return `<i class="ribbon-bar ${cls}" style="--h:${h}%;--d:${i * 5}ms"
+                 data-dia="${i}" aria-hidden="true"></i>`;
     }).join('');
 
     return `
-      <section class="ribbon" aria-label="Una barra por cada uno de los últimos ${dias} días. Cuanto más alta, más CO2 evitaste ese día.">
+      <figure class="ribbon" id="cinta">
         <div class="ribbon-head">
-          <span class="label-micro">Tus últimos ${dias} días · una barra por día</span>
-          <span class="ribbon-read">En total <b>${DB.fmt.n(total, 1)} kg</b> &nbsp;·&nbsp; unos <b>${DB.fmt.n(prom, 2)} kg</b> por día</span>
+          <span class="label-micro">Tus últimos ${dias} días</span>
+          <span class="ribbon-read" id="cinta-lectura" data-reposo="1">
+            En total <b>${DB.fmt.n(total, 1)} kg</b> &nbsp;·&nbsp;
+            unos <b>${DB.fmt.n(prom, 2)} kg</b> por día
+          </span>
         </div>
-        <div class="ribbon-track" style="--avg:${Math.min(96, Math.round(prom / max * 100))}%">${barras}</div>
-        <div class="ribbon-axis">
+        <div class="ribbon-track" style="--avg:${Math.min(96, Math.round(prom / max * 100))}%">
+          ${barras}
+          <span class="ribbon-cursor" hidden aria-hidden="true"></span>
+        </div>
+        <figcaption class="ribbon-axis">
           <span>${DB.fmt.fechaCorta(serie[0].fecha)}</span>
-          <span>entre más alta la barra, mejor fue ese día &nbsp;·&nbsp; la línea punteada es tu promedio</span>
+          <span class="ribbon-nota">una barra por día · la línea punteada es tu promedio</span>
           <span>hoy</span>
-        </div>
-      </section>`;
+        </figcaption>
+        <p class="sr-only">
+          Traza de los últimos ${dias} días. En total evitaste
+          ${DB.fmt.n(total, 1)} kilos de CO₂, un promedio de ${DB.fmt.n(prom, 2)} kilos
+          por día. Tu mejor día fue el ${DB.fmt.fecha(mejor.fecha)}, con
+          ${DB.fmt.co2(mejor.co2)} kilos. El detalle día por día está en la
+          tabla de Mi progreso.
+        </p>
+      </figure>`;
+  }
+
+  /** Lectura de un día concreto al pasar por encima de su barra. */
+  function conectarCinta(ctx = document) {
+    const cinta = $('#cinta', ctx);
+    if (!cinta) return;
+    const pista = $('.ribbon-track', cinta);
+    const lectura = $('#cinta-lectura', cinta);
+    const cursor = $('.ribbon-cursor', cinta);
+    if (!pista || !lectura) return;
+
+    const reposo = lectura.innerHTML;
+
+    const mostrar = barra => {
+      const d = cintaDatos?.[+barra.dataset.dia];
+      if (!d) return;
+      lectura.innerHTML = d.co2 > 0
+        ? `<b>${DB.fmt.fechaCorta(d.fecha)}</b> &nbsp;·&nbsp; <b>${DB.fmt.co2(d.co2)} kg</b> evitados`
+        : `<b>${DB.fmt.fechaCorta(d.fecha)}</b> &nbsp;·&nbsp; sin registros ese día`;
+      lectura.removeAttribute('data-reposo');
+      cinta.querySelector('.ribbon-bar.is-hover')?.classList.remove('is-hover');
+      barra.classList.add('is-hover');
+      if (cursor) { cursor.hidden = false; cursor.style.left = barra.offsetLeft + barra.offsetWidth / 2 + 'px'; }
+    };
+
+    const limpiar = () => {
+      lectura.innerHTML = reposo;
+      lectura.setAttribute('data-reposo', '1');
+      cinta.querySelector('.ribbon-bar.is-hover')?.classList.remove('is-hover');
+      if (cursor) cursor.hidden = true;
+    };
+
+    /* Un solo oyente en la pista en lugar de noventa en las barras. */
+    pista.addEventListener('pointermove', e => {
+      const barra = e.target.closest('.ribbon-bar');
+      if (barra) mostrar(barra);
+    });
+    pista.addEventListener('pointerleave', limpiar);
+    pista.addEventListener('pointercancel', limpiar);
   }
 
   /* ==================================================================
@@ -312,11 +479,15 @@ const UI = (() => {
   function abrirGlosario(clave) {
     const g = DB.glosario[clave];
     if (!g) return;
+    /* `largo` puede ser una función cuando la definición cita cifras del
+       catálogo: así se leen del dato en vez de repetirse a mano y quedarse
+       viejas. Ver `glosario.factor` en data.js. */
+    const largo = typeof g.largo === 'function' ? g.largo() : g.largo;
     modal({
       titulo: g.termino,
       cuerpo: `
         <p class="glos-corto">${esc(g.corto)}</p>
-        <p class="glos-largo">${esc(g.largo.replace(/\s+/g, ' ').trim())}</p>`,
+        <p class="glos-largo">${esc(largo.replace(/\s+/g, ' ').trim())}</p>`,
       acciones: [{ texto: 'Entendido', clase: 'btn-primary' }],
       ancho: 460
     });
@@ -327,7 +498,69 @@ const UI = (() => {
     if (b) abrirGlosario(b.dataset.ayuda);
   });
 
-  return { $, $$, esc, toast, modal, cerrarModal, cargando, validar, validacionEnVivo,
-           marcar, fortaleza, conectarRevelar, cintaCarbono, readout, esqueleto,
-           ayuda, termino, abrirGlosario };
+  /* ==================================================================
+     TEMA
+     El botón vive en la barra superior y cuenta los tres estados con su
+     icono. `Tema` guarda y aplica; aquí solo se pinta y se avisa.
+     ================================================================== */
+  function pintarBotonTema() {
+    /* `[data-cambiar-tema]` y no `[data-tema]`: ese último lo lleva el <html>
+       para aplicar el tema, así que el selector habría devuelto la raíz del
+       documento en lugar del botón. */
+    const b = $('[data-cambiar-tema]');
+    if (!b || typeof Tema === 'undefined') return;
+    const r = Tema.ROTULOS[Tema.actual()];
+    b.innerHTML = Icon.get(r.icono, 18);
+    b.setAttribute('aria-label', `${r.texto}. Cambiar el tema`);
+    b.setAttribute('title', `${r.texto} · pulsá para cambiarlo`);
+  }
+
+  function alternarTema() {
+    const nuevo = Tema.alternar();
+    pintarBotonTema();
+    toast(Tema.ROTULOS[nuevo].texto,
+      nuevo === 'auto' ? 'La aplicación sigue lo que tenga configurado tu dispositivo.' : '',
+      'info', 2600);
+  }
+
+  /* ==================================================================
+     DESCARGAR UN ARCHIVO
+
+     El navegador sabe escribir archivos, así que no hace falta ningún
+     backend para entregar uno. Antes los botones de exportar y de
+     descargar el reporte solo avisaban de que "el backend enviaría el
+     archivo": prometían algo que no pasaba.
+     ================================================================== */
+  function descargar(nombre, contenido, mime = 'application/json;charset=utf-8') {
+    const blob = new Blob([contenido], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombre;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    /* La URL temporal se suelta después: revocarla en el mismo momento del
+       clic puede cancelar la descarga en algunos navegadores. */
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  /** Nombre de archivo con la fecha, para que no se pisen entre descargas. */
+  const nombreArchivo = (base, ext) =>
+    `${base}-${DB.hoyISO()}.${ext}`;
+
+  return { $, $$, esc, focosDe, teclaMando,
+           toast, modal, cerrarModal, cargando, conBoton,
+           validar, validacionEnVivo, marcar, fortaleza, conectarRevelar,
+           cintaCarbono, conectarCinta, readout, esqueleto,
+           ayuda, termino, abrirGlosario,
+           pintarBotonTema, alternarTema, descargar, nombreArchivo };
 })();
+
+/* `const` en un script clásico no crea una propiedad de `window`. Se publica a
+   mano porque `data.js` y `nube.js` avisan de los fallos de escritura con
+   `window.UI?.toast(...)`: sin esto, el `?.` descartaba el aviso en silencio y
+   un error al guardar en la nube no llegaba nunca a la pantalla. */
+window.UI = UI;
+window.Screens = Screens;

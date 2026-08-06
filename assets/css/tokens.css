@@ -1,7 +1,7 @@
 /* ============================================================================
    tokens.css — Sistema de diseño: color, tipografía, espaciado, elevación.
    Ninguna pantalla debe declarar un color o un tamaño "a mano": todo sale
-   de aquí. Esa es la única forma de que 10 pantallas se vean como una app.
+   de aquí. Esa es la única forma de que 11 pantallas se vean como una app.
 
    Dirección visual: "instrumento climático personal".
    La app no es un folleto ecológico, es un tablero de medición. De ahí el
@@ -15,9 +15,26 @@
                  de todo lo interactivo (enlaces, foco, series de datos)
      - ámbar   : reservado para logros e insignias
      - brasa   : reservado para emisiones, riesgo y errores
+
+   ----------------------------------------------------------------------------
+   CÓMO ESTÁ ORGANIZADO EL COLOR (importa para el tema oscuro)
+
+   Cada familia se parte en tres papeles, porque un mismo tono no puede
+   servir para las tres cosas en los dos temas:
+
+     --x         relleno (fondo de botón, barra de un gráfico, punto)
+     --x-700     el mismo relleno, un paso más oscuro: bordes y hover
+     --x-ink     TEXTO de esa familia sobre su propio tinte (--x-tint)
+     --x-on      texto que va ENCIMA del relleno --x
+
+   En claro `--azul-ink` es más oscuro que `--azul`; en oscuro es más claro.
+   Si un componente usa `--azul` para pintar texto, se rompe al cambiar de
+   tema: por eso el texto siempre va con `-ink` o con `-on`.
    ========================================================================= */
 
 :root {
+  color-scheme: light;
+
   /* --- Superficies ------------------------------------------------------ */
   --paper:          #e9ebe4;  /* fondo de la aplicación (liquen pálido)      */
   --paper-raised:   #f4f5f0;  /* paneles y tarjetas                          */
@@ -37,40 +54,77 @@
   --line-strong:    #a5ada2;
   --line-ink:       #12211c;
 
+  /* --- Superficie profunda ---------------------------------------------
+     Las "pantallas del instrumento": barra lateral, panel de acceso, los
+     paneles oscuros y los lienzos 3D. Antes cada hoja repetía a mano
+     `#0c2921` y una decena de `rgba(194,211,203,.x)`; eso hacía imposible
+     cambiar de tema y escondía los fallos de contraste. Ahora son tokens.  */
+  --deep:           #0c2921;  /* la superficie                               */
+  --deep-raised:    #113127;  /* un escalón por encima, dentro de la misma   */
+  --deep-line:      rgba(194, 211, 203, .14);  /* hairline                   */
+  --deep-line-soft: rgba(194, 211, 203, .09);
+  --deep-line-firm: rgba(194, 211, 203, .22);
+  --deep-wash:      rgba(194, 211, 203, .06);  /* pies de panel, zonas       */
+  --deep-hover:     rgba(194, 211, 203, .09);
+
+  /* Texto sobre la superficie profunda. Los tres pasan AA sobre `--deep`:
+     15,5:1 · 9,9:1 · 6,2:1. Los valores anteriores para metadatos iban con
+     alfa de .45 a .62 y se quedaban entre 2,8:1 y 4,5:1 — por debajo de AA
+     justo en el texto más pequeño de la interfaz. */
+  --on-deep-strong: #f2f5f1;
+  --on-deep:        #c2d3cb;
+  --on-deep-soft:   #94a8a0;
+
   /* --- Pino (marca / primario) ------------------------------------------ */
   --pine:           #17493b;
   --pine-700:       #103528;
-  --pine-900:       #0c2921;  /* barra lateral                               */
+  --pine-ink:       #103528;  /* texto pino sobre --pine-tint                */
+  --pine-on:        #f2f5f1;  /* texto encima de --pine                      */
   --pine-tint:      #d7e2db;
-  --pine-on-dark:   #c2d3cb;  /* texto sobre pino-900                        */
+  --pine-tint-line: #b6ccc0;
   --pine-mid:       #4e8f7c;  /* solo gráficos                               */
 
   /* --- Azul (interacción, foco, datos) ---------------------------------- */
   --azul:           #1d4e9b;
   --azul-700:       #163d7b;
-  --azul-bright:    #5b9be8;  /* solo sobre fondos oscuros                   */
+  --azul-ink:       #163d7b;  /* texto azul sobre --azul-tint                */
+  --azul-on:        #ffffff;  /* texto encima de --azul                      */
   --azul-tint:      #dce6f4;
+  --azul-tint-2:    #cfddf1;  /* el tinte azul con hover                     */
+  --azul-tint-line: #b9cdea;
+  --azul-bright:    #5b9be8;  /* sobre superficie profunda                   */
 
   /* --- Ámbar (logros) --------------------------------------------------- */
-  --ochre-text:     #7d5a12;  /* versión legible para texto                  */
+  --ochre-ink:      #7d5a12;  /* versión legible para texto                  */
   --ochre-fill:     #b8862a;  /* versión para gráficos, medallas, rellenos   */
+  --ochre-on:       #2c1f04;  /* texto encima de --ochre-fill                */
   --ochre-tint:     #f1e7cf;
+  --ochre-tint-line:#ddcda2;
 
   /* --- Brasa (emisiones, error, alerta, racha encendida) ---------------- */
   --ember:          #b8412a;
   --ember-700:      #8f3220;
-  --ember-bright:   #f2825a;  /* solo sobre fondos oscuros, como azul-bright  */
+  --ember-ink:      #8f3220;  /* texto brasa sobre --ember-tint              */
+  --ember-on:       #ffffff;
   --ember-tint:     #f6e0da;
+  --ember-tint-line:#e6bcb1;
+  --ember-bright:   #f2825a;  /* sobre superficie profunda                   */
+
+  /* --- Enlaces ---------------------------------------------------------- */
+  --link:           #1d4e9b;
+  --link-hover:     #163d7b;
 
   /* --- Tipografía ------------------------------------------------------- */
   --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
   --font-body:    "IBM Plex Sans", "Segoe UI", sans-serif;
   --font-mono:    "IBM Plex Mono", "Consolas", monospace;
 
-  /* Escala tipográfica (1.25 modular, redondeada a px legibles) */
-  --t-display: 2.75rem;  /* 44px — solo el título de la pantalla de acceso  */
-  --t-h1:      1.9375rem;/* 31px */
-  --t-h2:      1.4375rem;/* 23px */
+  /* Escala tipográfica (1.25 modular). Los tres tamaños grandes son fluidos:
+     interpolan con el ancho de la ventana en lugar de saltar en un breakpoint,
+     así que no hay un punto donde el titular se ve desproporcionado. */
+  --t-display: clamp(2.125rem, 1.35rem + 2.6vw, 2.75rem); /* 34 → 44 px */
+  --t-h1:      clamp(1.625rem, 1.28rem + 1.1vw, 1.9375rem);/* 26 → 31 px */
+  --t-h2:      clamp(1.25rem, 1.10rem + 0.5vw, 1.4375rem); /* 20 → 23 px */
   --t-h3:      1.125rem; /* 18px */
   --t-body:    0.9375rem;/* 15px */
   --t-sm:      0.8125rem;/* 13px */
@@ -85,14 +139,20 @@
   --r-xs: 2px;
   --r-sm: 3px;
   --r-md: 5px;
+  --r-lg: 8px;      /* solo la paleta de comandos y las hojas móviles       */
 
   /* --- Elevación (reglas y sombras cortas, nunca halos difusos) ---------- */
   --shadow-1: 0 1px 0 rgba(18, 33, 28, .05);
   --shadow-2: 0 2px 4px rgba(18, 33, 28, .10), 0 0 0 1px rgba(18, 33, 28, .05);
   --shadow-pop: 0 8px 20px -8px rgba(12, 41, 33, .35), 0 0 0 1px rgba(18, 33, 28, .09);
+  --shadow-lift: 0 20px 50px -18px rgba(12, 41, 33, .45), 0 0 0 1px rgba(18, 33, 28, .10);
+  --scrim: rgba(12, 41, 33, .55);
 
   /* --- Movimiento ------------------------------------------------------- */
   --ease: cubic-bezier(.2, .7, .3, 1);
+  /* Sobrepasa un poco y se acomoda. Solo para lo que aparece o se activa,
+     nunca para un cambio de color: en un hover se leería como un temblor. */
+  --ease-out-back: cubic-bezier(.18, .89, .32, 1.22);
   --dur-1: 110ms;
   --dur-2: 190ms;
   --dur-3: 320ms;
@@ -102,15 +162,202 @@
   --topbar-h: 60px;
   --content-max: 1320px;
   --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--azul);
+
+  /* Muescas y barras del sistema en móvil. `env()` vale 0 donde no aplica,
+     así que se puede sumar sin condicionales. */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+
+  /* Opacidad de la retícula del papel milimetrado. Es un token porque en el
+     tema oscuro la misma retícula tiene que dibujarse en claro y no en
+     oscuro, y con otra intensidad. */
+  --grid-ink: rgba(18, 33, 28, .045);
+
+  /* Iconos que van como imagen de fondo (la flecha del desplegable y la marca
+     de campo correcto). Una imagen de fondo no hereda `currentColor`, así que
+     el SVG completo se guarda aquí para poder cambiarle el trazo por tema. */
+  --svg-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2358665e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --svg-check:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2317493b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   TEMA OSCURO
+
+   No es "los mismos colores con menos luz": es otra jerarquía de superficies.
+   En claro la profundidad sube (papel → panel elevado → panel oscuro como
+   acento). En oscuro sube al revés: el papel es oscuro y los paneles del
+   instrumento son MÁS oscuros que la página, para que sigan leyéndose como
+   pantallas encendidas y no se disuelvan en el fondo.
+
+   Se aplica de dos maneras y las dos hacen falta:
+     [data-tema="oscuro"]  -> elección explícita de la persona
+     prefers-color-scheme  -> cuando no ha elegido (data-tema="auto")
+   ========================================================================== */
+
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+
+  --paper:          #0f1a17;
+  --paper-raised:   #16231f;
+  --paper-sunken:   #0b1512;
+  --paper-pure:     #1b2a24;
+
+  --ink:            #e9efeb;
+  --ink-2:          #b4c1ba;
+  --ink-3:          #8d9c94;
+
+  --line:           #26352e;
+  --line-strong:    #3d5148;
+  --line-ink:       #e9efeb;
+
+  /* Los paneles del instrumento se hunden por debajo del papel. */
+  --deep:           #060e0c;
+  --deep-raised:    #0c1a16;
+  --deep-line:      rgba(194, 211, 203, .13);
+  --deep-line-soft: rgba(194, 211, 203, .08);
+  --deep-line-firm: rgba(194, 211, 203, .20);
+  --deep-wash:      rgba(194, 211, 203, .05);
+  --deep-hover:     rgba(194, 211, 203, .10);
+
+  /* Los rellenos suben de luminosidad para seguir separándose del fondo,
+     y todos los `-ink` se invierten: ahora son la variante clara. */
+  --pine:           #22684f;
+  --pine-700:       #1a5340;
+  --pine-ink:       #8fd0b4;
+  --pine-on:        #f2f5f1;
+  --pine-tint:      #14332a;
+  --pine-tint-line: #23503f;
+  --pine-mid:       #5aa38d;
+
+  --azul:           #2b68bd;
+  --azul-700:       #22528f;
+  --azul-ink:       #a3c8f4;
+  --azul-on:        #ffffff;
+  --azul-tint:      #12253f;
+  --azul-tint-2:    #17304f;
+  --azul-tint-line: #274c78;
+  --azul-bright:    #7db4f0;
+
+  --ochre-ink:      #e2be6c;
+  --ochre-fill:     #b8862a;
+  --ochre-on:       #2c1f04;
+  --ochre-tint:     #2b2210;
+  --ochre-tint-line:#4d3d18;
+
+  --ember:          #c04a31;
+  --ember-700:      #9c3823;
+  --ember-ink:      #f0a48c;
+  --ember-on:       #ffffff;
+  --ember-tint:     #2d1512;
+  --ember-tint-line:#5a281e;
+  --ember-bright:   #f2825a;
+
+  --link:           #93bff5;
+  --link-hover:     #b6d4f8;
+
+  /* En oscuro las sombras no se ven; lo que separa una capa de otra es el
+     halo del borde. Se sube el peso del borde y se baja el difuminado. */
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, .28);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, .38), 0 0 0 1px rgba(194, 211, 203, .09);
+  --shadow-pop: 0 10px 26px -10px rgba(0, 0, 0, .7), 0 0 0 1px rgba(194, 211, 203, .13);
+  --shadow-lift: 0 24px 60px -20px rgba(0, 0, 0, .8), 0 0 0 1px rgba(194, 211, 203, .15);
+  --scrim: rgba(3, 9, 8, .68);
+
+  --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--azul-bright);
+  --grid-ink: rgba(194, 211, 203, .05);
+  --svg-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238d9c94' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --svg-check:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238fd0b4' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+/* Quien no ha elegido tema hereda el del sistema. Se repite el bloque en vez
+   de anidarlo porque `@media` dentro de un selector todavía no es seguro en
+   todos los navegadores que tiene que soportar una defensa en un aula. */
+@media (prefers-color-scheme: dark) {
+  :root[data-tema="auto"] {
+    color-scheme: dark;
+
+    --paper:          #0f1a17;
+    --paper-raised:   #16231f;
+    --paper-sunken:   #0b1512;
+    --paper-pure:     #1b2a24;
+
+    --ink:            #e9efeb;
+    --ink-2:          #b4c1ba;
+    --ink-3:          #8d9c94;
+
+    --line:           #26352e;
+    --line-strong:    #3d5148;
+    --line-ink:       #e9efeb;
+
+    --deep:           #060e0c;
+    --deep-raised:    #0c1a16;
+    --deep-line:      rgba(194, 211, 203, .13);
+    --deep-line-soft: rgba(194, 211, 203, .08);
+    --deep-line-firm: rgba(194, 211, 203, .20);
+    --deep-wash:      rgba(194, 211, 203, .05);
+    --deep-hover:     rgba(194, 211, 203, .10);
+
+    --pine:           #22684f;
+    --pine-700:       #1a5340;
+    --pine-ink:       #8fd0b4;
+    --pine-tint:      #14332a;
+    --pine-tint-line: #23503f;
+    --pine-mid:       #5aa38d;
+
+    --azul:           #2b68bd;
+    --azul-700:       #22528f;
+    --azul-ink:       #a3c8f4;
+    --azul-tint:      #12253f;
+    --azul-tint-2:    #17304f;
+    --azul-tint-line: #274c78;
+    --azul-bright:    #7db4f0;
+
+    --ochre-ink:      #e2be6c;
+    --ochre-tint:     #2b2210;
+    --ochre-tint-line:#4d3d18;
+
+    --ember:          #c04a31;
+    --ember-700:      #9c3823;
+    --ember-ink:      #f0a48c;
+    --ember-tint:     #2d1512;
+    --ember-tint-line:#5a281e;
+
+    --link:           #93bff5;
+    --link-hover:     #b6d4f8;
+
+    --shadow-1: 0 1px 0 rgba(0, 0, 0, .28);
+    --shadow-2: 0 2px 6px rgba(0, 0, 0, .38), 0 0 0 1px rgba(194, 211, 203, .09);
+    --shadow-pop: 0 10px 26px -10px rgba(0, 0, 0, .7), 0 0 0 1px rgba(194, 211, 203, .13);
+    --shadow-lift: 0 24px 60px -20px rgba(0, 0, 0, .8), 0 0 0 1px rgba(194, 211, 203, .15);
+    --scrim: rgba(3, 9, 8, .68);
+
+    --focus-ring: 0 0 0 2px var(--paper), 0 0 0 4px var(--azul-bright);
+    --grid-ink: rgba(194, 211, 203, .05);
+    --svg-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238d9c94' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    --svg-check:   url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238fd0b4' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  }
 }
 
 /* Papel milimetrado: textura del fondo de trabajo. Se aplica con opacidad
    muy baja para que se lea como cuaderno técnico y no como decoración. */
 .grid-paper {
   background-image:
-    linear-gradient(to right,  rgba(18, 33, 28, .045) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(18, 33, 28, .045) 1px, transparent 1px);
+    linear-gradient(to right,  var(--grid-ink) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-ink) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+/* El cambio de tema no debe verse como un parpadeo. Se interpolan las dos
+   propiedades que de verdad cambian de golpe en todas las superficies, y solo
+   mientras el atributo está cambiando (`.cambiando-tema`, que pone ui.js):
+   dejarlo puesto haría que cada hover heredara una transición de 320 ms. */
+body.cambiando-tema,
+body.cambiando-tema *:not(.no-transicion) {
+  transition: background-color var(--dur-3) var(--ease),
+              border-color var(--dur-3) var(--ease),
+              color var(--dur-3) var(--ease) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -119,5 +366,6 @@
     animation-duration: .001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
   }
 }

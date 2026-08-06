@@ -6,8 +6,6 @@
    es la primera pieza de información ambiental que ve el usuario.
    ========================================================================= */
 
-const Screens = window.Screens || {};
-
 /* Panel izquierdo, con contenido distinto según la pantalla. */
 function panelAcceso({ titulo, resaltado, texto, puntos = [], etiqueta, cifra, unidad, pie }) {
   return `
@@ -48,8 +46,8 @@ Screens.registro = {
           texto: 'Creá una cuenta para registrar lo que hacés y ver, en kilos, el CO₂ que dejás de soltar cada semana.',
           puntos: [
             { icono: 'reciclaje',  texto: 'Registrá reciclaje, transporte, energía y agua' },
-            { icono: 'progreso',   texto: 'Vea el cálculo del CO₂ con la fórmula a la vista' },
-            { icono: 'escudo',     texto: 'Compare su avance sin exponer su identidad' }
+            { icono: 'progreso',   texto: 'Mirá el cálculo del CO₂ con la fórmula a la vista' },
+            { icono: 'escudo',     texto: 'Comparate con otras personas sin dar tu nombre' }
           ],
           etiqueta: 'Meta nacional de descarbonización',
           cifra: '2050', unidad: '',
@@ -60,7 +58,7 @@ Screens.registro = {
           <div class="auth-form-wrap">
             <div class="auth-head">
               <h2>Crear cuenta</h2>
-              <p>Tarda menos de un minuto. Solo pedimos lo necesario para calcular su progreso.</p>
+              <p>Tarda menos de un minuto. Solo te pedimos lo necesario para calcular tu progreso.</p>
             </div>
 
             <form id="form-registro" novalidate>
@@ -81,7 +79,7 @@ Screens.registro = {
                          autocomplete="email" placeholder="nombre@ufide.ac.cr"
                          data-reglas="requerido correo" required>
                 </div>
-                <span class="hint">Se usará para enviarle los recordatorios y el resumen semanal.</span>
+                <span class="hint">Ahí te llegan los recordatorios y el resumen de la semana.</span>
               </div>
 
               <div class="field">
@@ -89,7 +87,7 @@ Screens.registro = {
                 <select class="select" id="r-provincia" name="provincia">
                   ${provincias.map(p => `<option ${p === 'San José' ? 'selected' : ''}>${p}</option>`).join('')}
                 </select>
-                <span class="hint">Permite comparar su progreso con el de personas de su zona.</span>
+                <span class="hint">Sirve para compararte con gente de tu zona.</span>
               </div>
 
               <div class="field">
@@ -102,11 +100,11 @@ Screens.registro = {
                   <button class="reveal" type="button" aria-label="Mostrar contraseña">${Icon.get('ojo', 17)}</button>
                 </div>
                 <div class="meter" id="r-medidor" data-level="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-                <span class="hint" id="r-fuerza">Combine mayúsculas, números y un símbolo.</span>
+                <span class="hint" id="r-fuerza">Mezclá mayúsculas, números y un símbolo.</span>
               </div>
 
               <div class="field">
-                <label for="r-clave2">Repita la contraseña <span class="req" aria-hidden="true">*</span></label>
+                <label for="r-clave2">Repetí la contraseña <span class="req" aria-hidden="true">*</span></label>
                 <div class="input-icon" style="position:relative">
                   ${Icon.get('candado', 17)}
                   <input class="input" id="r-clave2" name="clave2" type="password"
@@ -138,7 +136,7 @@ Screens.registro = {
             </form>
 
             <p class="auth-alt">
-              ¿Ya tiene una cuenta? <a href="#/acceso">Inicie sesión</a>
+              ¿Ya tenés cuenta? <a href="#/acceso">Entrá</a>
             </p>
           </div>
         </main>
@@ -153,7 +151,7 @@ Screens.registro = {
     const clave = document.getElementById('r-clave');
     const medidor = document.getElementById('r-medidor');
     const leyenda = document.getElementById('r-fuerza');
-    const textos = ['Combine mayúsculas, números y un símbolo.', 'Contraseña débil.',
+    const textos = ['Mezclá mayúsculas, números y un símbolo.', 'Contraseña débil.',
                     'Contraseña aceptable.', 'Contraseña buena.', 'Contraseña fuerte.'];
     clave.addEventListener('input', () => {
       const n = clave.value ? UI.fortaleza(clave.value) : 0;
@@ -189,7 +187,7 @@ Screens.registro = {
         DB.guardarPerfil({ nombre: datos.nombre, correo: datos.correo, provincia: datos.provincia });
         DB.state.autenticado = true;
         DB.persistir();
-        UI.toast('Cuenta creada', 'Ya puede registrar su primera acción sostenible.');
+        UI.toast('Cuenta creada', 'Ya podés registrar tu primera acción sostenible.');
         Router.ir('/inicio');
         return;
       }
@@ -204,7 +202,7 @@ Screens.registro = {
           provincia: datos.provincia,
           conEjemplo: form.ejemplo.checked
         });
-        UI.toast('Cuenta creada', 'Ya puede registrar su primera acción sostenible.');
+        UI.toast('Cuenta creada', 'Ya podés registrar tu primera acción sostenible.');
         // El resto lo hace `onAuthStateChanged`: descarga los datos y navega.
       } catch (e) {
         zonaError.hidden = false;
@@ -233,10 +231,10 @@ Screens.acceso = {
         ${panelAcceso({
           titulo: 'Tu huella,',
           resaltado: 'medida cada día.',
-          texto: 'Retome el seguimiento donde lo dejó. La cinta de carbono conserva los últimos noventa días de actividad.',
+          texto: 'Seguí donde lo dejaste. La cinta de carbono guarda tus últimos noventa días.',
           puntos: [
             { icono: 'reloj',     texto: 'Tu racha y tu meta del mes, apenas abrís' },
-            { icono: 'insignia',  texto: 'Las insignias que lleva ganadas' },
+            { icono: 'insignia',  texto: 'Las insignias que llevás ganadas' },
             { icono: 'reporte',   texto: 'El reporte de emisiones, siempre al día' }
           ],
           etiqueta: 'Electricidad renovable en Costa Rica',
@@ -264,7 +262,7 @@ Screens.acceso = {
                 <div>
                   <b>Modo sin conexión.</b> No se pudo contactar a Firebase, así que el prototipo
                   trabaja con datos simulados en este dispositivo. Cualquier correo con formato
-                  válido y una contraseña de ocho caracteres inician la sesión; escriba
+                  válido y una contraseña de ocho caracteres abren la sesión; escribí
                   <span class="mono">incorrecta</span> para ver el estado de error.
                 </div>
               </div>`}
@@ -323,7 +321,7 @@ Screens.acceso = {
       e.preventDefault();
       UI.modal({
         titulo: 'Restablecer la contraseña',
-        cuerpo: `<p>Le enviaremos un enlace de un solo uso al correo registrado. El enlace vence en 30 minutos.</p>
+        cuerpo: `<p>Te mandamos un enlace de un solo uso al correo con el que te registraste. Vence en 30 minutos.</p>
           <div class="field" style="margin-top:var(--s-4)">
             <label for="m-correo">Correo electrónico</label>
             <input class="input" id="m-correo" type="email" value="${UI.esc(form.correo.value)}" placeholder="nombre@ufide.ac.cr">
@@ -381,7 +379,7 @@ Screens.acceso = {
         }
         DB.state.autenticado = true;
         DB.persistir();
-        UI.toast('Bienvenido de vuelta', `Lleva ${DB.racha()} días seguidos registrando acciones.`);
+        UI.toast('Bienvenido de vuelta', `Llevás ${DB.racha()} días seguidos registrando acciones.`);
         Router.ir('/inicio');
         return;
       }
@@ -401,5 +399,3 @@ Screens.acceso = {
     });
   }
 };
-
-window.Screens = Screens;

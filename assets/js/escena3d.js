@@ -15,7 +15,7 @@
    la misma información en texto.
    ========================================================================= */
 
-import { THREE, crearVista, iluminar } from './vista3d.js';
+import { THREE, crearVista, iluminar, tokenColor } from './vista3d.js';
 
 /* Densidad del CO₂ gaseoso a 25 °C y 1 atm, en kg/m³.
    Se obtiene de la ley de los gases ideales: ρ = M / (R·T). */
@@ -23,7 +23,9 @@ const DENSIDAD_CO2 = 44.01 / (0.0821 * 298.15);   // ≈ 1,798 kg/m³
 const M3_POR_KG = 1 / DENSIDAD_CO2;               // ≈ 0,556 m³/kg
 
 const COLOR = {
-  fondo:    0x0c2921,
+  /* El fondo se resuelve al montar, desde `--deep`: el lienzo tiene que ser
+     del mismo color que el panel que lo contiene, en los dos temas. */
+  get fondo() { return tokenColor('--deep', 0x0c2921); },
   gas:      0x7fb0c8,
   arista:   0xa8d4e6,
   persona:  0xc2d3cb,

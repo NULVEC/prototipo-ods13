@@ -111,22 +111,33 @@ Screens.perfil = {
             </form>
           </div>
 
+          <!-- Estos dos interruptores no hacían nada: se dibujaban con un
+               estado fijo, sin nadie escuchándolos, mientras la pantalla de
+               Comunidad prometía «podés salirte de la comparación desde tu
+               perfil». Ahora guardan de verdad, y la tabla del UC8 los
+               respeta. -->
           <div class="panel">
             <div class="panel-head">${Icon.get('escudo', 18)}<h3>Privacidad</h3></div>
             <div class="panel-body">
               <label class="switch" style="margin-bottom:var(--s-4)">
-                <input type="checkbox" id="p-anon" checked>
+                <input type="checkbox" id="p-anon" ${u.enComunidad === false ? '' : 'checked'}>
                 <span class="track"></span>
                 <span class="text-sm">Participar en la comparativa comunitaria con mi alias</span>
               </label>
               <label class="switch">
-                <input type="checkbox" id="p-zona" ${DB.state.usuario.notificaciones.comunidad ? 'checked' : ''}>
+                <input type="checkbox" id="p-zona" ${u.mostrarProvincia === false ? '' : 'checked'}>
                 <span class="track"></span>
                 <span class="text-sm">Mostrar mi provincia en la tabla de la comunidad</span>
               </label>
               <p class="text-sm muted" style="margin-top:var(--s-4);margin-bottom:0">
                 Tu nombre y tu correo nunca se le muestran a nadie más.
               </p>
+              <div class="notice" id="p-aviso-privacidad" style="margin-top:var(--s-4)"
+                   ${u.enComunidad === false ? '' : 'hidden'}>
+                ${Icon.get('info', 16)}
+                <div>Estás fuera de la comparativa: no aparecés en la tabla ni en el
+                     podio, y tu fila se retiró. Tu progreso propio no cambia.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -152,11 +163,21 @@ Screens.perfil = {
           <div class="panel">
             <div class="panel-head">${Icon.get('descargar', 18)}<h3>Tus datos</h3></div>
             <div class="panel-body">
-              <p class="text-sm">Podés descargar todos tus registros en formato JSON para guardarlos
-              o migrarlos a otra plataforma.</p>
-              <button class="btn btn-block" type="button" id="p-exportar">
-                ${Icon.get('descargar', 16)}<span>Exportar mis registros</span>
-              </button>
+              <p class="text-sm">Llevate todo lo que registraste. Cada fila incluye el factor de
+              emisión y la fuente que se le aplicó, así que el cálculo se puede revisar fuera
+              de la aplicación.</p>
+              <div style="display:flex;gap:var(--s-2);flex-wrap:wrap">
+                <button class="btn" type="button" id="p-csv" style="flex:1;min-width:130px">
+                  ${Icon.get('hojaCalculo', 16)}<span>CSV</span>
+                </button>
+                <button class="btn" type="button" id="p-json" style="flex:1;min-width:130px">
+                  ${Icon.get('codigo', 16)}<span>JSON</span>
+                </button>
+              </div>
+              <p class="text-sm muted" style="margin:var(--s-3) 0 0">
+                El CSV abre en Excel o en Hojas de cálculo. El JSON sirve para llevar los datos
+                a otro sistema.
+              </p>
             </div>
           </div>
 
@@ -243,7 +264,7 @@ Screens.perfil = {
       if (DB.state.modo !== 'nube' || !window.Nube) {
         await UI.cargando(boton, 900);
         limpiarClave();
-        UI.toast('Contraseña actualizada', 'Deberá usarla la próxima vez que inicie sesión.');
+        UI.toast('Contraseña actualizada', 'Usala la próxima vez que inicies sesión.');
         return;
       }
 
@@ -254,7 +275,7 @@ Screens.perfil = {
            la contraseña actual del formulario sirve para reautenticar. */
         await Nube.cambiarClave(formClave.actual.value, formClave.nueva.value);
         limpiarClave();
-        UI.toast('Contraseña actualizada', 'Deberá usarla la próxima vez que inicie sesión.');
+        UI.toast('Contraseña actualizada', 'Usala la próxima vez que inicies sesión.');
       } catch (err) {
         UI.marcar(formClave.actual, Nube.traducir(err));
         UI.toast('No se cambió la contraseña', Nube.traducir(err), 'error', 7000);
@@ -264,10 +285,61 @@ Screens.perfil = {
       }
     });
 
-    document.getElementById('p-exportar').addEventListener('click', async e => {
-      await UI.cargando(e.currentTarget, 800);
-      UI.toast('Exportación lista',
-        `${DB.state.registros.length} registros preparados. El backend enviaría el archivo por la API.`, 'info');
+    /* ------------------------------------------------------------------
+       Privacidad. Los dos interruptores guardan de verdad.
+
+       Salirse de la comparativa no es un ajuste cosmético: además de dejar de
+       aparecer, hay que RETIRAR la fila que ya está publicada en la colección
+       `comunidad`. Si solo se dejara de publicar, la última cifra seguiría
+       visible para todo el mundo y el interruptor sería una mentira.
+       ------------------------------------------------------------------ */
+    const anon = document.getElementById('p-anon');
+    const zona = document.getElementById('p-zona');
+    const avisoPriv = document.getElementById('p-aviso-privacidad');
+
+    anon.addEventListener('change', () => {
+      const dentro = anon.checked;
+      DB.guardarPerfil({ enComunidad: dentro });
+      avisoPriv.hidden = dentro;
+      if (dentro) {
+        DB.republicarEnComunidad();
+        UI.toast('Estás en la comparativa',
+          `Volvés a aparecer como ${DB.state.usuario.alias}. Nadie ve tu nombre.`, 'info');
+      } else {
+        DB.retirarmeDeComunidad();
+        UI.toast('Te saliste de la comparativa',
+          'Se retiró tu fila. Seguís viendo tu propio progreso igual.', 'info');
+      }
+    });
+
+    zona.addEventListener('change', () => {
+      DB.guardarPerfil({ mostrarProvincia: zona.checked });
+      DB.republicarEnComunidad();
+      UI.toast(zona.checked ? 'Se muestra tu provincia' : 'Tu provincia queda oculta',
+        zona.checked
+          ? 'En la tabla aparece tu provincia junto al alias.'
+          : 'En la tabla vas a aparecer sin provincia.', 'info');
+    });
+
+    /* ------------------------------------------------------------------
+       Exportación de verdad.
+
+       Antes este botón solo avisaba de que «el backend enviaría el archivo por
+       la API». No hacía falta ningún backend: los datos están en el navegador y
+       el navegador sabe escribir archivos. Un botón que promete un archivo
+       tiene que entregar un archivo.
+       ------------------------------------------------------------------ */
+    document.getElementById('p-csv').addEventListener('click', () => {
+      UI.descargar(UI.nombreArchivo('mis-acciones-climaticas', 'csv'),
+        DB.csv(), 'text/csv;charset=utf-8');
+      UI.toast('Descarga lista',
+        `${DB.state.registros.length} registros en CSV, con su factor y su fuente.`, 'info');
+    });
+
+    document.getElementById('p-json').addEventListener('click', () => {
+      UI.descargar(UI.nombreArchivo('mis-acciones-climaticas', 'json'),
+        JSON.stringify(DB.exportable(), null, 2));
+      UI.toast('Descarga lista', 'Perfil, totales y registros completos en JSON.', 'info');
     });
 
     document.getElementById('p-eliminar').addEventListener('click', () => {
@@ -312,7 +384,7 @@ Screens.perfil = {
               UI.cerrarModal();
               UI.toast('Eliminando la cuenta…', 'Borrando registros, insignias y perfil.', 'info', 6000);
               Nube.borrarCuenta(clave.value)
-                .then(() => UI.toast('Cuenta eliminada', 'Todos sus datos fueron borrados.', 'info'))
+                .then(() => UI.toast('Cuenta eliminada', 'Todos tus datos fueron borrados.', 'info'))
                 .catch(err => UI.toast('No se eliminó la cuenta', Nube.traducir(err), 'error', 9000));
             } }
         ]
