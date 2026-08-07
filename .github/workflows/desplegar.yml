@@ -45,9 +45,9 @@ jobs:
     name: Verificar
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
 
@@ -105,9 +105,9 @@ jobs:
       name: produccion
       url: https://prototipo-ods13.web.app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
 
@@ -138,11 +138,30 @@ jobs:
 
       - name: Desplegar hosting y reglas de Firestore
         run: |
-          npx --yes firebase-tools@15 deploy \
-            --only hosting,firestore:rules \
-            --project prototipo-ods13 \
-            --non-interactive \
-            --message "${GITHUB_SHA::7} — ${GITHUB_REF_NAME}"
+          set -o pipefail
+          salida="$RUNNER_TEMP/salida-deploy.txt"
+
+          if npx --yes firebase-tools@15 deploy \
+               --only hosting,firestore:rules \
+               --project prototipo-ods13 \
+               --non-interactive \
+               --message "${GITHUB_SHA::7} — ${GITHUB_REF_NAME}" 2>&1 | tee "$salida"; then
+            exit 0
+          fi
+
+          # La cuenta de servicio que crea `firebase init hosting:github` trae
+          # Firebase Hosting Admin pero NO Firebase Rules Admin, porque el
+          # workflow que genera Firebase nunca despliega reglas. Se diagnostica
+          # aquí para que el siguiente que lo vea no tenga que deducirlo del 403.
+          if grep -q 'firebaserules.googleapis.com' "$salida"; then
+            echo "::error title=Falta un permiso en la cuenta de servicio::A la \
+          cuenta de servicio le falta el papel «Firebase Rules Admin» \
+          (roles/firebaserules.admin). Sin él se puede desplegar el hosting pero no \
+          las reglas de Firestore, y como la compilación de las reglas ocurre antes \
+          que la subida, no se despliega nada. Se añade en Google Cloud Console → \
+          IAM, sobre la cuenta que empieza por github-action-"
+          fi
+          exit 1
 
       - name: Borrar las credenciales
         # `always()` para que la clave se borre también si el despliegue falla.
