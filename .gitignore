@@ -12,3 +12,9 @@ node_modules/
 
 # Caché local de la CLI de Firebase
 .firebase/
+
+# Herramientas de agentes de IA. Son de la máquina de quien programa, no del
+# proyecto: se instalan solas y no se comparten.
+.agents/
+.claude/
+skills-lock.json
